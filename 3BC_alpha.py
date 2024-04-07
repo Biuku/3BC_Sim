@@ -14,6 +14,8 @@ import pygame
 from pygame.locals import *
 from itertools import cycle ## lets you cycle through a list [10, 11, 12] so upon 12 it returns to index 0
 
+## Modules
+from man import Man
 
 pygame.init()
 w = 3400   #3400 = optimal for my widescreen
@@ -21,72 +23,47 @@ h = 1350
 screen = pygame.display.set_mode((w, h))
 exit = False
 
-## Clock 
+### Clock 
 clock = pygame.time.Clock()
 fps = 45
 
-#### Screen setup
+### Screen setup
 colour_bk = (255, 255, 255)
 
-#### Graphics setup
+### Graphics setup
 diamond = pygame.image.load("images/diamond_1.png")  
 
 ### Animation setup
+x = 200
+y = 200
 
-## Load animation frames
+men = []
 
-# L and R = running left and right 
-man_L1 = pygame.image.load("images/man_left_1.png")  
-man_L2 = pygame.image.load("images/man_left_2.png") 
-man_L3 = pygame.image.load("images/man_left_3.png") 
+for i in range(0, 1000, 50):
+    _man = Man(screen, x+i, y+(i//2))
+    men.append(_man)
 
-man_R1 = pygame.image.load("images/man_right_1.png")
-man_R2 = pygame.image.load("images/man_right_2.png") 
-man_R3 = pygame.image.load("images/man_right_3.png")
+#man1 = Man(screen, x, y)
+#man2 = Man(screen, x-50, y-200)
 
-# N = North (and also South) -- i.e., toward top / bottom of screen
-man_N1 = pygame.image.load("images/man_north_1.png")
-man_N2 = pygame.image.load("images/man_north_2.png")
-man_N3 = pygame.image.load("images/man_north_3.png")
-man_N4 = pygame.image.load("images/man_north_4.png")
-
-
-## Build 'itertools > cycle' iterators of each frame in an animation to streamline cycling through last to first frame
-man_frames_L = cycle([man_L1, man_L1, man_L2, man_L2, man_L3, man_L3]) ## Doubling up frames to better match animation to locomotion without reducing fps to ridiculous level
-man_frames_R = cycle([man_R1, man_R1, man_R2, man_R2, man_R3, man_R3])
-man_frames_N = cycle([man_N1, man_N1, man_N2, man_N2, man_N3, man_N3, man_N4, man_N4])
-
-## Control the Loadrunner frame rate 
-man_frameRate = 0 # Time in miliseconds | 1000 miliseconds = 1 second | 65 seems right for a human runner going full speed
-man_curr_frame = next(man_frames_L)
-
-### Movement 
 # Movement toggles
 left = False
 right = False
 north = False
 south = False
-northWest = False
-northEast = False
-southEast = False
-southWest = False
 
-# Man X position
-man_x = w//4 +40 # start position
-man_y = 1150
-man_speed_x = 4/3 # Speed of lateral locomotion -- pixels of movement per frame
-man_speed_y = 4/3
-man_diagonal_factor = 0.744 ## Diagonal motion is 1.35x faster than North-South or lateral motion. No idea why, but this should equalize that.
-
-""" ***** MAIN LOOP ***** """
+### ***** MAIN LOOP ***** ###
 
 while not exit:
     
     clock.tick(fps)
     
- 
+    ## Draw background objects
     screen.fill(colour_bk)
-    
+    screen.blit(diamond, (10, 10))
+
+    ### Events ### 
+
     for event in pygame.event.get():
     
         if event.type == pygame.QUIT:
@@ -111,16 +88,21 @@ while not exit:
                 south = True
                 
             if event.key == K_KP7:
-                northWest = True          
+                north = True
+                left = True       
                 
             if event.key == K_KP9:
-                northEast = True   
+                north = True
+                right = True
                                  
             if event.key == K_KP3:
-                southEast = True    
+                south = True
+                right = True
                                 
             if event.key == K_KP1:
-                southWest = True  
+                south = True
+                left = True
+                
                   
         if event.type == KEYUP:
             if event.key == K_LEFT or event.key == K_KP4:
@@ -136,61 +118,26 @@ while not exit:
                 south = False
                 
             if event.key == K_KP7:
-                northWest = False          
+                north = False
+                left = False      
                 
             if event.key == K_KP9:
-                northEast = False   
+                north = False
+                right = False
                                  
             if event.key == K_KP3:
-                southEast = False    
-                                
+                south = False
+                right = False   
+                                 
             if event.key == K_KP1:
-                southWest = False  
-    
+                south = False
+                left = False
 
-    """03 -- Move the loadrunner L and R with animation"""    
-    if left:
-        man_curr_frame = next(man_frames_L)
-        man_x -= man_speed_x
+    #man1.move(left, right, north, south)
+    #man2.move(left, right, north, south)
 
-    if right:   
-        man_curr_frame = next(man_frames_R)
-        man_x += man_speed_x
-            
-    if north:   
-        man_curr_frame = next(man_frames_N)
-        man_y -= man_speed_y
-            
-    if south:        
-        man_curr_frame = next(man_frames_N)
-        man_y += man_speed_y
+    for _man in men:
+        _man.move(left, right, north, south)
 
-            
-    if northWest:
-        man_curr_frame = next(man_frames_L)
-        man_y -= man_speed_y * man_diagonal_factor
-        man_x -= man_speed_x * man_diagonal_factor
-            
-            
-    if northEast:        
-        man_curr_frame = next(man_frames_R)
-        man_y -= man_speed_y * man_diagonal_factor
-        man_x += man_speed_x * man_diagonal_factor
-            
-    if southEast:        
-        man_curr_frame = next(man_frames_R)
-        man_y += man_speed_y * man_diagonal_factor
-        man_x += man_speed_x * man_diagonal_factor
-
-    if southWest:        
-        man_curr_frame = next(man_frames_L)
-        man_y += man_speed_y * man_diagonal_factor
-        man_x -= man_speed_x * man_diagonal_factor
-
-
-    #### Draw sprites    
-    screen.blit(diamond, (10, 10))
-    screen.blit(man_curr_frame, (int(man_x), int(man_y)))
-                
     pygame.display.update()
     
