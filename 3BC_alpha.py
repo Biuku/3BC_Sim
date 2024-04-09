@@ -1,21 +1,22 @@
-""" April 7, 2024 -- THIRD-BASE COACH SIMULATOR. A project to train 3B-C decision making in high school baseball, using PyGame.
+""" April 8, 2024 -- THIRD-BASE COACH SIMULATOR. A project to train 3B-C decision making in high school baseball, using PyGame.
 
-    Below starting point is the final version of 01. preAlpha > _03_animeTest.py, which was a POC of a running player on a field,
-    calibrated so the runner traverses the field at about the speed of a high school baseball player. Achieving this is the gate 
-    for moving from POC to Alpha.  
-    The next steps (the first Alpha steps):
-        - Refactor this streamlined POC code -- all in one program -- to OOP with modules
-        - Begin using Git / Github
-        - Add 9 defensive players and roles/actions in about 21 defensive situations. Confirm PyGame can manage these animations etc. without lagging
-        (or, look into threading)
+    Focused on implementing fielders in correct positions, ultimately to move correctly in various defensive situations.
+
+    Key step: implementing an 'arrondissement' map of 36 field locations to make it easier to determine where a ball is hit, and where defensive players should go 
+
+    OKAY -- I'M GOING TO TRY BASING OBJECTS OFF PYGAME'S SPRITE METHOD, WHICH WILL TAKE A BIT OF RE-WORK, BUT SHOULD SIMPLIFY COLLISSION DETECTION AND OTHER THINGS.
+    Will commit the current version before trying this 
+   
     """
 
 import pygame
 from pygame.locals import *
 from itertools import cycle ## lets you cycle through a list [10, 11, 12] so upon 12 it returns to index 0
 
-## Modules
+## Import modules
 from man import Man
+
+#### Initialize pygame and screen
 
 pygame.init()
 w = 3400   #3400 = optimal for my widescreen
@@ -23,28 +24,41 @@ h = 1350
 screen = pygame.display.set_mode((w, h))
 exit = False
 
-### Clock 
+# Game clock 
 clock = pygame.time.Clock()
 fps = 45
 
-### Screen setup
-colour_bk = (255, 255, 255)
+# Screen setup
+colour_black = (0, 0, 0)
+colour_white = (255, 255, 255)
+colour_midGray = (120, 120, 120)
 
-### Graphics setup
+# Graphics setup
 diamond = pygame.image.load("images/diamond_1.png")  
 
-### Animation setup
-x = 200
-y = 200
+# Animation setup
+x = w//4
+y = 1100
 
-men = []
 
-for i in range(0, 1000, 50):
-    _man = Man(screen, x+i, y+(i//2))
-    men.append(_man)
+#### Instantiate objects #### 
 
-#man1 = Man(screen, x, y)
-#man2 = Man(screen, x-50, y-200)
+# Instantiate characters
+baserunner = Man(screen, x, y, "baserunner")
+fielder = Man(screen, x-50, y-200, "fielder")
+
+# Instantiate bases 
+# Rect = left, top, width, height
+
+base_1 = pygame.Rect(1118, 1042, 25, 25)
+base_2 = pygame.Rect(938, 868, 25, 25)
+base_3 = pygame.Rect(758, 1042, 25, 25)
+base_4 = pygame.Rect(938, 1220, 25, 25)
+base_rubber = pygame.Rect(938, 1042, 25, 7)
+
+# Instantiate 
+
+
 
 # Movement toggles
 left = False
@@ -59,7 +73,7 @@ while not exit:
     clock.tick(fps)
     
     ## Draw background objects
-    screen.fill(colour_bk)
+    screen.fill(colour_white)
     screen.blit(diamond, (10, 10))
 
     ### Events ### 
@@ -133,11 +147,17 @@ while not exit:
                 south = False
                 left = False
 
-    #man1.move(left, right, north, south)
-    #man2.move(left, right, north, south)
+    baserunner.move(left, right, north, south)
+    fielder.move(left, right, north, south)
 
-    for _man in men:
-        _man.move(left, right, north, south)
+
+    pygame.draw.rect(screen, colour_black, base_1)
+    pygame.draw.rect(screen, colour_black, base_2)
+    pygame.draw.rect(screen, colour_black, base_3)
+    pygame.draw.rect(screen, colour_black, base_4)
+    pygame.draw.rect(screen, colour_midGray, base_rubber)
+
+ 
 
     pygame.display.update()
     
