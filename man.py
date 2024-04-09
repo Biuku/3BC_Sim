@@ -1,19 +1,25 @@
-""" April 7, 2024 -- Refactoring my single instance of a 'man' (able to run/move) into an object """
+""" Updated April 8 -- added Rect's and collision detection with bases """
 
 import pygame
 from pygame.locals import *
+from pygame.sprite import Sprite
 
 #from pygame.sprite import Sprite
 from itertools import cycle ## lets you cycle through a list [10, 11, 12] so upon 12 it returns to index 0
 
-class Man():   #(Sprite)
+
+colour_black = (0, 0, 0)
+colour_white = (255, 255, 255)
+colour_red = (255, 0, 0)
+
+class Man(): #Sprite
 
     def __init__(self, screen, x, y, team):
 
+        #super().__init__()
         self.screen = screen
+
         self.team = team # "baserunner" or "fielder"
-        self.man_x = x # start position
-        self.man_y = y # start position
         
         ### ANIMATION -- set up of frames
         ## Load the baserunner frames -- team Red
@@ -30,12 +36,7 @@ class Man():   #(Sprite)
         self.man_N2 = pygame.image.load("images/baserunners/man_north_2.png")
         self.man_N3 = pygame.image.load("images/baserunners/man_north_3.png")
         self.man_N4 = pygame.image.load("images/baserunners/man_north_4.png")
-
-        # Organize frames in lists -- use 'itertools > cycle' to streamline code to loop from the end of the list to the beginning 
         
-
-
-
         ## Load the fielder frames -- team Blue
         # Load the frames for leftward, rightward and North/South running animation 
         self.fielder_L1 = pygame.image.load("images/fielders/man_fielder_left_1.png")  
@@ -65,8 +66,14 @@ class Man():   #(Sprite)
             self.man_frames_N = cycle([self.fielder_N1, self.fielder_N1, self.fielder_N2, self.fielder_N2, self.fielder_N3, self.fielder_N3, self.fielder_N4, self.fielder_N4])
 
         
-        # Start frame
+        # Start frame and rect for collision detection
         self.man_curr_frame = next(self.man_frames_L)
+        self.rect = self.man_curr_frame.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.rect_colour = colour_white
+        self.rect_thickness = 1
+
 
         ### LOCOMOTION -- set up, including start position and speed of locomotion  
         self.man_speed_x = 4/3 # Speed of lateral locomotion -- pixels of movement per frame
@@ -78,38 +85,55 @@ class Man():   #(Sprite)
             self.man_curr_frame = next(self.man_frames_L)
 
             if north:
-                self.man_y -= self.man_speed_y * self.man_diagonal_factor
-                self.man_x -= self.man_speed_x * self.man_diagonal_factor
+                self.rect.y -= self.man_speed_y * self.man_diagonal_factor
+                self.rect.x -= self.man_speed_x * self.man_diagonal_factor
 
             elif south:
-                self.man_y += self.man_speed_y * self.man_diagonal_factor
-                self.man_x -= self.man_speed_x * self.man_diagonal_factor
+                self.rect.y += self.man_speed_y * self.man_diagonal_factor
+                self.rect.x -= self.man_speed_x * self.man_diagonal_factor
             
             else:
-                self.man_x -= self.man_speed_x
+                self.rect.x -= self.man_speed_x
 
         elif right:
             self.man_curr_frame = next(self.man_frames_R)
             
             if north:
-                self.man_y -= self.man_speed_y * self.man_diagonal_factor
-                self.man_x += self.man_speed_x * self.man_diagonal_factor
+                self.rect.y -= self.man_speed_y * self.man_diagonal_factor
+                self.rect.x += self.man_speed_x * self.man_diagonal_factor
             
             elif south:
-                self.man_y += self.man_speed_y * self.man_diagonal_factor
-                self.man_x += self.man_speed_x * self.man_diagonal_factor
+                self.rect.y += self.man_speed_y * self.man_diagonal_factor
+                self.rect.x += self.man_speed_x * self.man_diagonal_factor
         
             else:
-                self.man_x += self.man_speed_x
+                self.rect.x += self.man_speed_x
                 
         elif north:   
             self.man_curr_frame = next(self.man_frames_N)
-            self.man_y -= self.man_speed_y
+            self.rect.y -= self.man_speed_y
                 
         elif south:        
             self.man_curr_frame = next(self.man_frames_N)
-            self.man_y += self.man_speed_y   
+            self.rect.y += self.man_speed_y
+        
 
         #### Draw sprites    
-        self.screen.blit(self.man_curr_frame, (int(self.man_x), int(self.man_y)))
-            
+        self.screen.blit(self.man_curr_frame, self.rect)
+        pygame.draw.rect(self.screen, self.rect_colour , self.rect, self.rect_thickness) # Toggle on/off to see the collision detection rect
+        #pygame.draw.rect(self.screen, self.rect_colour , self.rect) # Toggle on/off to see the collision detection rect
+
+
+    def detect_collisions(self, bases):
+        collision = False        
+        for base in bases:      
+            if base.colliderect(self.rect):
+                self.rect_thickness = 4
+                self.rect_colour = (255, 0, 0)
+                collision = True
+
+            elif collision == False: 
+                self.rect_thickness = 1
+                self.rect_colour = (255, 255, 255)
+
+
