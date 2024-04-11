@@ -19,6 +19,8 @@ class Man(): #Sprite
         self.screen = screen
 
         self.team = team  # "baserunner" or "fielder"
+        self.goal = False
+        self.goal_pos = (0,0)
         
         ### ANIMATION -- set up of frames
         ## Load the baserunner animation frames -- team Red
@@ -60,7 +62,8 @@ class Man(): #Sprite
             self.man_frames_L = cycle([self.fielder_L1, self.fielder_L1, self.fielder_L2, self.fielder_L2, self.fielder_L3, self.fielder_L3]) # Doubling up frames to better match animation to locomotion without reducing fps to ridiculous level
             self.man_frames_R = cycle([self.fielder_R1, self.fielder_R1, self.fielder_R2, self.fielder_R2, self.fielder_R3, self.fielder_R3])
             self.man_frames_N = cycle([self.fielder_N1, self.fielder_N1, self.fielder_N2, self.fielder_N2, self.fielder_N3, self.fielder_N3, self.fielder_N4, self.fielder_N4])
-        
+    
+    
         # Start frame and rect for collision detection
         self.man_curr_frame = next(self.man_frames_L)
         self.rect = self.man_curr_frame.get_rect()
@@ -76,7 +79,53 @@ class Man(): #Sprite
         self.man_diagonal_factor = 0.744 ## Diagonal motion is 1.35x faster than North-South or lateral motion -- this should equalize that.
 
 
-    def move(self, left, right, north, south):
+    def assign_goal(self, goal_pos):
+        self.goal_pos = goal_pos
+        self.goal = True
+        
+        print("MY GOAL IS: ", goal_pos)
+        print("MY POSITION IS: ",  self.rect.x, self.rect.y)
+        
+    def goal_move(self):
+        if self.goal:
+            
+            x_journey = self.goal_pos[0] - self.rect.x
+            y_journey = self.goal_pos[1] - self.rect.y
+            
+            if abs(x_journey) < 1:
+                left = False
+                right = False
+            
+            elif x_journey >= 1:
+                right = True
+                left = False
+            
+            else: 
+                left = True
+                right = False
+
+            if abs(y_journey) < 1:
+                north = False
+                south = False
+            
+            elif y_journey <= -1:
+                north = True
+                south = False
+            
+            else:
+                north = False
+                south = True            
+                        
+            # Cheat -- use the mouse_move func to move the guy 
+            self.mouse_move( left, right, north, south)
+            
+            # Turn off goal seeking when the reach the goal
+            if abs(x_journey) == 0 and abs(y_journey) == 0:
+                self.goal = False
+            
+        
+
+    def mouse_move(self, left, right, north, south):
         if left:
             self.man_curr_frame = next(self.man_frames_L)
 
@@ -116,7 +165,8 @@ class Man(): #Sprite
 
         #### Draw sprites    
         self.screen.blit(self.man_curr_frame, self.rect)
-        pygame.draw.rect(self.screen, self.rect_colour , self.rect, self.rect_thickness) 
+        #pygame.draw.rect(self.screen, self.rect_colour , self.rect, self.rect_thickness) 
+
 
 
     def detect_collisions(self, bases):
@@ -126,9 +176,11 @@ class Man(): #Sprite
                 self.rect_thickness = 4
                 self.rect_colour = colour_red
                 collision = True
+                pygame.draw.rect(self.screen, self.rect_colour , self.rect, self.rect_thickness) 
 
             elif collision == False: 
-                self.rect_thickness = 1
-                self.rect_colour = colour_white
+                pass
+                # self.rect_thickness = 1
+                # self.rect_colour = colour_white
 
 
