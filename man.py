@@ -8,22 +8,20 @@ from pygame.sprite import Sprite
 from itertools import cycle ## lets you cycle through a list [10, 11, 12] so upon 12 it returns to index 0
 
 
-colour_black = (0, 0, 0)
 colour_white = (255, 255, 255)
 colour_red = (255, 0, 0)
 
 class Man(): #Sprite
 
-    def __init__(self, screen, x, y, team):
+    def __init__(self, screen, pos, team):
 
         #super().__init__()
         self.screen = screen
 
-        self.team = team # "baserunner" or "fielder"
+        self.team = team  # "baserunner" or "fielder"
         
         ### ANIMATION -- set up of frames
-        ## Load the baserunner frames -- team Red
-        # Load the frames for leftward, rightward and North/South running animation 
+        ## Load the baserunner animation frames -- team Red
         self.man_L1 = pygame.image.load("images/baserunners/man_left_1.png")  
         self.man_L2 = pygame.image.load("images/baserunners/man_left_2.png") 
         self.man_L3 = pygame.image.load("images/baserunners/man_left_3.png") 
@@ -37,8 +35,7 @@ class Man(): #Sprite
         self.man_N3 = pygame.image.load("images/baserunners/man_north_3.png")
         self.man_N4 = pygame.image.load("images/baserunners/man_north_4.png")
         
-        ## Load the fielder frames -- team Blue
-        # Load the frames for leftward, rightward and North/South running animation 
+        ## Load the fielder animation frames -- team Blue
         self.fielder_L1 = pygame.image.load("images/fielders/man_fielder_left_1.png")  
         self.fielder_L2 = pygame.image.load("images/fielders/man_fielder_left_2.png") 
         self.fielder_L3 = pygame.image.load("images/fielders/man_fielder_left_3.png") 
@@ -51,7 +48,6 @@ class Man(): #Sprite
         self.fielder_N2 = pygame.image.load("images/fielders/man_fielder_north_2.png")
         self.fielder_N3 = pygame.image.load("images/fielders/man_fielder_north_3.png")
         self.fielder_N4 = pygame.image.load("images/fielders/man_fielder_north_4.png")
-
   
         # Organize frames in lists -- use 'itertools > cycle' to streamline code to loop from the end of the list to the beginning 
         if self.team == "baserunner":
@@ -64,13 +60,12 @@ class Man(): #Sprite
             self.man_frames_L = cycle([self.fielder_L1, self.fielder_L1, self.fielder_L2, self.fielder_L2, self.fielder_L3, self.fielder_L3]) # Doubling up frames to better match animation to locomotion without reducing fps to ridiculous level
             self.man_frames_R = cycle([self.fielder_R1, self.fielder_R1, self.fielder_R2, self.fielder_R2, self.fielder_R3, self.fielder_R3])
             self.man_frames_N = cycle([self.fielder_N1, self.fielder_N1, self.fielder_N2, self.fielder_N2, self.fielder_N3, self.fielder_N3, self.fielder_N4, self.fielder_N4])
-
         
         # Start frame and rect for collision detection
         self.man_curr_frame = next(self.man_frames_L)
         self.rect = self.man_curr_frame.get_rect()
-        self.rect.x = x
-        self.rect.y = y
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
         self.rect_colour = colour_white
         self.rect_thickness = 1
 
@@ -78,7 +73,8 @@ class Man(): #Sprite
         ### LOCOMOTION -- set up, including start position and speed of locomotion  
         self.man_speed_x = 4/3 # Speed of lateral locomotion -- pixels of movement per frame
         self.man_speed_y = 4/3
-        self.man_diagonal_factor = 0.744 ## Diagonal motion is 1.35x faster than North-South or lateral motion. No idea why, but this should equalize that.
+        self.man_diagonal_factor = 0.744 ## Diagonal motion is 1.35x faster than North-South or lateral motion -- this should equalize that.
+
 
     def move(self, left, right, north, south):
         if left:
@@ -120,8 +116,7 @@ class Man(): #Sprite
 
         #### Draw sprites    
         self.screen.blit(self.man_curr_frame, self.rect)
-        pygame.draw.rect(self.screen, self.rect_colour , self.rect, self.rect_thickness) # Toggle on/off to see the collision detection rect
-        #pygame.draw.rect(self.screen, self.rect_colour , self.rect) # Toggle on/off to see the collision detection rect
+        pygame.draw.rect(self.screen, self.rect_colour , self.rect, self.rect_thickness) 
 
 
     def detect_collisions(self, bases):
@@ -129,11 +124,11 @@ class Man(): #Sprite
         for base in bases:      
             if base.colliderect(self.rect):
                 self.rect_thickness = 4
-                self.rect_colour = (255, 0, 0)
+                self.rect_colour = colour_red
                 collision = True
 
             elif collision == False: 
                 self.rect_thickness = 1
-                self.rect_colour = (255, 255, 255)
+                self.rect_colour = colour_white
 
 

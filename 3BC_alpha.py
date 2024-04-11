@@ -1,27 +1,12 @@
 """ April 10, 2024 -- THIRD-BASE COACH SIMULATOR. A project to train 3B-C decision making in high school baseball, using PyGame.
 
-    April 10 -- re-organized my whole coordinate map system: 
-        1. Boundaries -- OF foul poles, tip of home, etc.
-        2. OF standard positions 
-        3. INF bases + rubber
-        
-    Next, I want to convert player positions into steps rather than pixels, so I can position them relative to bases or other markers 
-    using baseball logic. Then, I'll update the 9 defensive players' standard starting positions.
-    
-    Once all that is in place, it will start to get fun -- encoding various baseball situations, where each fielder goes, what each baserunner's last obtained base is, etc. 
-    
-    ***
-    Got standard INF positioning in place ... took a lot of math because the diamond is rotated 45 degrees. Did the math in a spreadsheet to be easier to follow my steps, 
-    but wouldn't be hard to bake that into the Python code so I can adjust players based on 'steps' (like, with your feet) rather than pixels. 
-    """
+"""
 
 import pygame
 from pygame.locals import *
-from itertools import cycle ## lets you cycle through a list [10, 11, 12] so upon 12 it returns to index 0
-
-## Import modules
+import numpy as np
 from man import Man
-#from arrondissements import Arrondissements
+
 
 #### Initialize pygame and screen
 
@@ -29,19 +14,12 @@ pygame.init()
 w = 3400 #= optimal for my widescreen
 h = 1350
 screen = pygame.display.set_mode((w, h))
-exit = False
 
 # Game clock 
 clock = pygame.time.Clock()
 fps = 45
 
 # Screen setup
-colour_black = (0, 0, 0)
-colour_white = (255, 255, 255)
-colour_darkGray = (60, 60, 60)
-colour_midGray = (120, 120, 120)
-colour_lightGray = (180, 180, 180)
-colour_red = (255, 0, 0)
 arrondissements_font = pygame.font.Font('freesansbold.ttf', 20)
 
 # Graphics setup
@@ -50,8 +28,31 @@ diamond = pygame.image.load("images/diamond_1.png")
 
 #### Coordinates system
 
+#### Calibration of steps-to-pixels conversion factor
+def steps_to_pos(old_coord, steps, steps_posNeg):
+    pixels_per_step = 7
+    
+    over_a = np.sqrt( (steps[0] **2)/2 )
+    back_a = np.sqrt( (steps[1] **2)/2 )
+    
+    adjust = np.array([ [over_a, over_a], [back_a, back_a]])
+    
+    all_xy = adjust * steps_posNeg
+    
+    #sum x's and y's
+    x = np.sum(all_xy[:, 0])
+    y = np.sum(all_xy[:, 1])
+    
+    #convert to pixels
+    adjust = np.array([ x, y]) * pixels_per_step
+    
+    # return absolute pos 
+    return old_coord + adjust
+
+
 ## Boundaries
 x_centre_line = 950
+
 
 lf_corner = (103, 390)
 cf_wall = (x_centre_line, 35)
@@ -64,58 +65,95 @@ LF = (550, mid_depth_OF)
 CF = (x_centre_line, 350)
 RF = (1350, mid_depth_OF)
 
+# New dict's
+pos_boundaries = {  "lf_corner": (103, 390), 
+                    "cf_wall": (x_centre_line, 35), 
+                    "rf_corner": (1780, 410), 
+                    "four_B_tip": (x_centre_line, 1245)
+                    }
+
+mid_depth_OF = 550
+"""
+pos_standard_of = { "LF": (550, mid_depth_OF),
+                   "CF": (x_centre_line, 350),
+                    "RF": (1350, mid_depth_OF)
+                    }
+"""
+
 ## INF
-# INF foundation
-# base_size = 25
+# Base centroids
 
-x_1B = 1130
-x_3B = 768
-
-y_2B = 880
-y_4B = 1235
 y_middle_line = 1055
-y_rubber_P = y_middle_line - 5
 
-# INF markers
-one_B = (x_1B, y_middle_line)
-two_B = (x_centre_line, y_2B)
-three_B = (x_3B, y_middle_line)
-four_B = (x_centre_line, y_4B) 
-rubber_P = (x_centre_line, y_rubber_P)
-
-base_coords = [one_B, two_B, three_B, four_B]
+pos_base_centroids = {  "one_B": (1130, y_middle_line),      
+                        "two_B": (x_centre_line, 880),
+                        "three_B": (768, y_middle_line),
+                        "four_B": (x_centre_line, 1235), 
+                    }
+pos_rubber_P = (x_centre_line, y_middle_line - 5)
 
 
-## Bases must be created here because they are collision objects
-bases = []
+### Define standard INF positions using "footsteps" off bases
+
+# Manually update dict. First tuple = "over" and "back". second item controls left-right, up-down of the steps as views on diamond in pygame
+inf_steps_adjust = {"f3": [(9, 12),   [(-1, -1), (1, -1)],  "one_B" ],
+                    "f4": [(-5, 12),  [(1, 1), (1, -1)],    "two_B"],
+                    "f5": [(7, 12),   [(1, -1), (-1, -1)],  "three_B"], 
+                    "f6": [(-7, 15),  [(-1, 1), (-1, -1)],  "two_B"], 
+                }
+
+## This is the location of standard player coordinates
+pos_standard = {}
+
+for key, value in inf_steps_adjust.items():
+    steps = value[0]
+    steps_posNeg = np.array(value[1])
+    
+    base_id = value[2]    
+    old_coord = pos_base_centroids[base_id]
+     
+    new_coord = steps_to_pos(old_coord, steps, steps_posNeg)
+    
+    pos_standard[key] = new_coord
+
+pos_standard['f1'] = (pos_rubber_P)
+pos_standard['f2'] = pos_base_centroids['four_B']
+pos_standard['f7'] = LF
+pos_standard['f8'] = CF
+pos_standard['f9'] = RF
+
+for pos in pos_standard.items():
+    print(pos)
+
+
+               
+## Instantiate base rect's -- collision objects
 base_size = 25
 base_offset = base_size // 2
+base_rects = []
 
-for base_coord in base_coords:
+for base_centroid in pos_base_centroids.values():
     # Rect = left, top, width, height
-    base = pygame.Rect(base_coord[0]-base_offset, base_coord[1]-base_offset, base_size, base_size)
-    bases.append(base)
+    base = pygame.Rect(base_centroid[0]-base_offset, base_centroid[1]-base_offset, base_size, base_size)
+    base_rects.append(base)
 
 
-#### Player standard positions
-
-def draw_survey_markers():
+## Create arrondissements 
+def draw_arrondissements():
+    
+    # Draw survey markers for game-play edges
     marker_size = 5
 
-    # Game-play edges
     pygame.draw.circle(screen, 'black', lf_corner, marker_size) # LF corner
     pygame.draw.circle(screen, 'black', cf_wall, marker_size) # CF wall
     pygame.draw.circle(screen, 'black', rf_corner, marker_size) # RF corner
     pygame.draw.circle(screen, 'black', four_B_tip, marker_size//2) # Home plate tip
     
     # Base survey_markers (on centre)
-     
-    for base in base_coords:
-        pygame.draw.circle(screen, 'black', base, marker_size) 
-
-
-## Create OF arrondissements 
-def draw_arrondissements():
+    for base_centroid in pos_base_centroids.values():
+        pygame.draw.circle(screen, 'black', base_centroid, marker_size) 
+    
+    # OF arrondissements
     circle_size = 40 
     pygame.draw.circle(screen, 'grey', LF, circle_size) # LF
     pygame.draw.circle(screen, 'grey', CF, circle_size) # CF
@@ -133,52 +171,15 @@ def draw_arrondissements():
 
 ## Bases are squares capable of collisions with coord based on base survey markers)
 def draw_bases():
-    for base in bases:
+    for base in base_rects:
         pygame.draw.rect(screen, "black", base, 2)
     
-    
-    """
-    for base_coord in base_coords:
-        base = pygame.Rect(base_coord[0]-base_offset, base_coord[1]-base_offset, base_size, base_size)
-        pygame.draw.rect(screen, "black", base, 2)
-    """
 
-
-#### Calibration of steps-to-pixels conversion factor
-""" I believe a standard walking step is 1'. From Home to 2B there are 127' = 63.5 steps; and also 355 pixels.
-    So, there should be 5.6 pixels per step. I'm going to lay down some footprints to see if that looks right
-    
-"""
 def draw_positions():
-    y_footprint = y_4B
-    step_size = 5.6
-     
-    step_circle_size = 3
     pos_circle_size = 8
     
-    
-    #Draw 3B standard position location
-    """
-    # Based on 2' per step
-    f3_adjust= (12, -83)
-    f4_adjust= (79, -40)
-    f5_adjust = (-20, -75)
-    f6_adjust= (-87, -32)
-    """
-    # Based on 3' per step
-    f3_adjust= (15, -103)
-    f4_adjust= (99, -49)
-    f5_adjust = (-25, -94)
-    f6_adjust= (-109, -40)
-    
-    
-    fielders = [(f3_adjust, one_B), (f4_adjust, two_B), (f5_adjust, three_B), (f6_adjust, two_B)]
-    
-    for fielder in fielders:
-        x_new = fielder[0][0] + fielder[1][0]
-        y_new = fielder[0][1] + fielder[1][1]
-        
-        pygame.draw.circle(screen, 'black', (x_new, y_new), pos_circle_size, 3)
+    for pos in pos_standard.values():
+        pygame.draw.circle(screen, 'black', pos, pos_circle_size, 3)
     
 
 ### Create fielders
@@ -187,21 +188,21 @@ x = w//3 #850
 y = 1100
 
 #### Instantiate objects #### 
-# Instantiate characters
-steps = 10
+### Instantiate characters
 
-baserunner = Man(screen, x, y, "baserunner")
-f1 = Man(screen, rubber_P[0]-5, rubber_P[1]-(2.5*steps), "fielder")
-f2 = Man(screen, four_B[0]-5, four_B[1]+(3*steps), "fielder")
-f3 = Man(screen, one_B[0]-(1.8*steps), one_B[1]-(7*steps), "fielder")
-f4 = Man(screen, two_B[0]+(9*steps), two_B[1]-(.8*steps), "fielder")
-f5 = Man(screen, three_B[0]+(2*steps), three_B[1]-(7*steps), "fielder")
-f6 = Man(screen, two_B[0]-(12*steps), two_B[1]+(1*steps), "fielder")
-f7 = Man(screen, LF[0], LF[1], "fielder")
-f8 = Man(screen, CF[0], CF[1], "fielder")
-f9 = Man(screen, RF[0], RF[1], "fielder")
+def create_fielders():
+    fielder_ids = ['f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9']
 
-men = [f1, f2, f3, f4, f5, f6, f7, f8, f9 ] 
+    fielder_objects = {}
+    for fielder_id in fielder_ids:
+        
+        pos = pos_standard[fielder_id]
+        fielder_objects[fielder_id] = Man(screen, pos, "fielder")
+        
+    return fielder_objects
+
+fielder_objects = create_fielders()
+#baserunner = Man(screen, x, y, "baserunner")
 
 
 ## Movement toggles
@@ -218,13 +219,14 @@ show_positions = False
 
 #### ***** MAIN LOOP ***** ####
 
+exit = False
 
 while not exit:
     
     clock.tick(fps)
     
     ## Draw background objects
-    screen.fill(colour_white)
+    screen.fill('white')
     screen.blit(diamond, (10, 10))
 
     ### Events ### 
@@ -312,7 +314,7 @@ while not exit:
 
     if show_arrondissements:
         draw_arrondissements()
-        draw_survey_markers()
+
     
     if show_positions:
         draw_positions()
@@ -320,10 +322,8 @@ while not exit:
     if show_bases:
         draw_bases()
 
-  
-    for man in men:
-        man.move(left, right, north, south)
-        man.detect_collisions(bases)
+    for fielder in fielder_objects.values():
+        fielder.move(left, right, north, south)
+        fielder.detect_collisions(base_rects)
  
     pygame.display.update()
-    
