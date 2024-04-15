@@ -39,7 +39,8 @@ class Setup:
      
         self.font12 = pygame.font.SysFont('Arial', 12) 
         self.font15 = pygame.font.SysFont('Arial', 15) #pygame.font.Font('freesansbold.ttf', 15)
-        self.font20 = pygame.font.SysFont('Arial', 20) 
+        self.font20 = pygame.font.SysFont('Arial', 18)
+        
         
         
         
@@ -131,6 +132,7 @@ class Setup:
             pos = pos_standard[fielder_id]                
             fielder_objects[fielder_id] = Fielder(screen, pos, fielder_id)
             
+            
         return fielder_objects
     
     
@@ -181,39 +183,88 @@ class Setup:
         _107 = _105
         
         # 108    | cutoff_6_2B_CF
+        _108 = (940, 670)
+        
         # 109    | cutoff_6_2B_LF
+        _109 = (750, 800)
+        
         # 110    | backup_1_3B
+        _110 = (775, 1085 )
+        
         # 111    | cover_2_home
         _111 = B4
 
         # 112    | cutoff_4_3B
+        _112 = (1070, 880)
+        
         # 113    | cutoff_6_3B_CF
+        _113 = (880, 700)
+        
         # 114    | cutoff_6_3B_LF
+        _114 = (620, 750)
+        
         # 115    | backup_9_2B
         _115 = (1160, 880)
         
-        
         # 116    | backup_1_home
         _116 = (950, 1300)
-        
-        
+            
         # 117    | cutoff_3_home_CF
+        _117 = (1000, 910)
+        
         # 118    | cutoff_3_home_RF
+        _118 = (1080, 980)
+        
         # 119    | cutoff_5_home
         _119 = (840, 1030)
         
         # 120    | cover_6_3B
         _120 = _104
         
-        # 121    | backup_7_3B                
+        # 121    | backup_7_3B
+        _121 = (675, 1025)                
 
+        
+        """A Google Sheets file links it all together as follows:
+            - There are about 15 Trosky plays. Each one prescribes an action for each defensive player
+            - There's a lot of overlap, so I wrote down each action, numbering them from 100 onwards
+            - The numbering has no significance -- the Google Sheets index is the menu
+            - I manually found the coordinates for each defensive coverage action 
+            - I will ultimately encode each defensive play, picking from this menu of actions 
+        
+        """ 
+        
         pos_coverage = {    
                         100: _100, 101: _101, 102: _102, 103: _103, 104: _104, 105: _105, 106: _106,
-                        107: _107, 111: _111, 115: _115, 116: _116, 119: _119, 120: _120              
+                        107: _107, 108: _108, 109: _109, 110: _110, 111: _111, 112: _112, 113: _113,
+                        114: _114, 115: _115, 116: _116, 117: _117, 119: _118, 119: _119, 120: _120,
+                        121: _121             
                         }
 
         return pos_coverage
    
+    def get_defensive_plays(self, pos_coverage):
+       
+        ## pos_coverage is the dict with all coordinates for defensive actions numbered as keys from 100 - ???
+        # Below, each defensive play is a key, and the list of 0-9 provides plays for all defensive players
+        # 1 = field the ball
+        # 2 = back up the guy fielding the ball
+        # 0th position is the string description of the play
+        
+        defensive_plays = {3: ["Nobody on, single to LF", 100, 101, 102, 107, 104, 109, 1, 2, 115],
+                            4: ["Nobody on, single to CF", 100, 101, 102, 107, 104, 108, 2, 1, 2],
+                            5: ["Nobody on, single to RF", 100, 101, 102, 103, 104, 105, 106, 2, 1],
+                            6: ["R1, single to LF", 110, 111, 102, 107, 104, 114, 1, 2, 115],
+                            7: ["R1, single to CF", 110, 111, 102, 107, 104, 113, 2, 1, 2],
+                            8: ["R1, single to RF", 110, 111, 102, 112, 104, 105, 106, 2, 1],
+                            9: ["R2, single to LF", 116, 111, 102, 107, 119, 120, 1, 2, 115],
+                            10: ["R2, single to CF", 116, 111, 117, 107, 104, 113, 2, 1, 2],
+                            11: ["R2, single to RF", 116, 111, 118, 112, 104, 105, 121, 2, 1],           
+        }
+       
+        defensive_plays_index = {}
+       
+        return defensive_plays
                 
     ## Do trionometry to convert 'steps over' and 'steps back' in baseball to Pygame coordinates   
     def convert_steps_to_pos(self, old_coord, steps): 
@@ -245,4 +296,5 @@ class Setup:
         
         # 6. Return absolute pos
         return old_coord + super_deltas
+    
     

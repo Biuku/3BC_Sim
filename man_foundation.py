@@ -160,6 +160,12 @@ class Man():
                 
         self.screen.blit(self.fielder_curr_frame, self.fielder_rect)
         pygame.draw.rect(self.screen, self.rect_colour, self.fielder_rect, self.rect_thickness)
+        
+        ## Write fielder ID on fielder
+        font = pygame.font.SysFont('Arial', 12)
+        x = self.fielder_rect.x + 16
+        y = self.fielder_rect.y + 40
+        self.draw_text(self.fielder_id, 'black', (x, y), font, 2)
             
       
     def draw_baserunner(self):
@@ -205,3 +211,15 @@ class Man():
         
         return (x, y)
    
+   
+    def draw_text(self, string_, colour, coord, font, justification):
+    
+        text = font.render(string_, True, colour)
+        text_rect = text.get_rect()
+     
+        text_rect.topleft = coord
+
+        if justification == 2: 
+            text_rect.center = coord
+            
+        self.screen.blit(text, text_rect)

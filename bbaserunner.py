@@ -28,7 +28,7 @@ class Baserunner(Man):
         self.base_attained = 0
         self.score = False
         
-        self.font20 = pygame.font.SysFont('Arial', 20) #pygame.font.Font('freesansbold.ttf', 15) #
+        self.font20 = pygame.font.SysFont('Arial', 18) 
     
     def set_start_pos(self, base_centroids):
         home = base_centroids['four_B']
@@ -149,13 +149,14 @@ class Baserunner(Man):
         
         ### Meta -- display the latest base attained
         text = "No bases attained"
+        pos = (1400, 900)
         
         if self.base_attained > 0:
             text = "Highest base attained: " + str(self.base_attained) + "B" 
         
         text_base_attained = self.font20.render(text, True, 'black')  # Text, antialiasing, color
         text_base_attained_rect = text_base_attained.get_rect()
-        text_base_attained_rect.center = (1600, 1100)
+        text_base_attained_rect.topleft = pos
         
         self.screen.blit(text_base_attained, text_base_attained_rect)       
         

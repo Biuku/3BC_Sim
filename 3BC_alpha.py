@@ -28,12 +28,16 @@ fps = 45
 # Graphics setup
 diamond = pygame.image.load("images/diamond_1.png")
 
-# Game toggles
+## Game toggles
 left = right = north = south = False
+baserunner_advance = False
+situation_start = False
+
+# Meta / development toggles
 show_arrondissements = False
 show_positions = False
-baserunner_advance = False
-
+measuring_tape = False
+num_keys = [False] * 10 ## Keep track of multiple num keys pressed above the kb
 
 ##### ***** INITIALIZE COORDINATES AND OBJECTS ***** #####
 
@@ -46,13 +50,29 @@ base_rects = setup.make_bases(base_centroids) # Dict of base rects -- collision 
 
 ## Get situational coordinates | dicts
 pos_standard = setup.get_pos_standard(base_centroids) # Standard fielder pre-pitch coordinates: f1, f2, f3, f4, f5, f6, f7, f8, f9
-pos_coverage = setup.get_pos_coverage(base_centroids)  
+pos_coverage = setup.get_pos_coverage(base_centroids)
+defensive_plays = setup.get_defensive_plays(pos_coverage)
+curr_situation = 0
 
 ## Instantiate characters | dict
 fielder_objects = setup.make_fielders(pos_standard, screen)  # f1, f2, f3, f4, f5, f6, f7, f8, f9
 baserunner = setup.make_baserunners(screen)
+ball_pos = (10, 10)
 
 ##### ***** FUNCTIONS ***** #####
+
+def draw_text(string_, colour, coord, font, justification):
+    
+    text = font.render(string_, True, colour)
+    text_rect = text.get_rect()
+# 
+    text_rect.topleft = coord
+  
+    if justification == 2: 
+        text_rect.center = coord
+        
+    screen.blit(text, text_rect)
+    
 
 ### META FUNCTIONS -- used primarily during code-buid ###
 
@@ -76,7 +96,6 @@ def draw_arrondissements():
     for pos in pos_standard.values():        
         pygame.draw.circle(screen, 'black', pos, 8, 3)
     
-
 ## Draw situational positions       
 def draw_coverage_id():
       
@@ -84,15 +103,8 @@ def draw_coverage_id():
         pygame.draw.circle(screen, 'blue', pos_situation, 35, 2)
         
         text = "#" + str(key)
-        text_coverage_id = setup.font12.render(text, True, 'black')  # Text, antialiasing, color
-        text_coverage_id_rect = text_coverage_id.get_rect()
-        text_coverage_id_rect.center = pos_situation
-        
-        screen.blit(text_coverage_id, text_coverage_id_rect)
-
-
-## Measure distance from Home ##
-measuring_tape = False
+        # string_, colour, coord, font, justification: 1 = topleft 2 = center
+        draw_text(text, 'black', pos_situation, setup.font12, 2)
 
 ## Utility function to convert a line between two points into a distance in feet
 def measure_distance_in_feet(start_pos, end_pos):
@@ -103,8 +115,7 @@ def measure_distance_in_feet(start_pos, end_pos):
     ## Next, convert two sets of coordinates to a linear distance using trigonometry
     distance_in_pixels = math.sqrt( ( end_pos[0] - start_pos[0] )**2  +  ( end_pos[1] - start_pos[1] )**2 )
     
-    return distance_in_pixels / pixels_to_feet
-    
+    return distance_in_pixels / pixels_to_feet    
 
 def draw_measuring_tape():
     
@@ -113,44 +124,102 @@ def draw_measuring_tape():
     distance_in_feet = measure_distance_in_feet(start_pos, end_pos)
     
     ## Set up on-screen coordinates
-
     pos_str = "(" + str(end_pos[0]) + ", " + str(end_pos[1]) + ")"
     distance_str = str( int(distance_in_feet) ) + "'" 
-
-    text_pos = setup.font15.render(pos_str, True, 'black')  # Text, antialiasing, color
-    text_pos_rect = text_pos.get_rect()
-    text_pos_rect.midleft = (end_pos[0]+30, end_pos[1]+10)
-
-    text_dist = setup.font15.render(distance_str, True, 'grey') # Text, antialiasing, colour
-    text_dist_rect = text_dist.get_rect()
-    text_dist_rect.midleft = (end_pos[0]+30, end_pos[1]+30)
     
-    if measuring_tape:
-        pygame.draw.line(screen, 'grey', start_pos, end_pos, 2)
-        screen.blit(text_pos, text_pos_rect)
-        screen.blit(text_dist, text_dist_rect)
+    x = end_pos[0]+20
+    pos_coord = (x, end_pos[1]+10)
+    distance_coord = (x, end_pos[1]+30)
+    
+    ## Draw 
+    # string_, colour, coord, font, justification: 1 = topleft 2 = center
+    draw_text(pos_str, 'black', pos_coord, setup.font15, 1)
+    draw_text(distance_str, 'grey', distance_coord, setup.font15, 1)
+    
+    pygame.draw.line(screen, 'grey', start_pos, end_pos, 2)
 
 
 ## CREATE A SINGLE TEST PLAY SITUATION
 situation_3_bool = False
 situation_7_bool = False
-situation_start = False
 
-def situation_3(situation_start):
 
-    # Place a ball in RF
-    ball_pos = (1400, 400)
+def choose_situation(curr_situation, num_keys, defensive_plays):
+    
+    ## Let the user enter 2 digits
+    for i, val in enumerate(num_keys):
+        if val:
+            if curr_situation == 0: 
+                curr_situation = i
+            
+            elif curr_situation < 10: 
+                curr_situation =  curr_situation * 10 + i # Tens
+                
+            ## else you're trying to add a third digit after reaching a 2 digit # 
+            else:
+                curr_situation = i ## Roll over if you tried entering too high a 
+    num_keys = [False] * 10 
+
+    ### Write instructions: key assignments for coverage situations     
+    x, y = 1400, 950
+    
+    instructions_text = "Press 'c' to reset situations. Press 's' to activate current situation"
+    draw_text(instructions_text, 'black', (x, y), setup.font20, 1)
+   
+    y += 20
+    draw_text("You pressed: ", 'black', (x, y), setup.font20, 1)
+    
+    x += 120
+    draw_text(str(curr_situation), 'black', (x, y), setup.font20, 1)
+    
+    x += 40
+    if curr_situation in defensive_plays:
+        text = defensive_plays[curr_situation][0]
+        draw_text(text, 'black', (x, y), setup.font20, 1)
+        
+        
+    
+    return curr_situation, num_keys
+
+
+def do_situation(curr_situation, defensive_plays, pos_coverage, pos_standard, situation_start, ball_pos):
+
+    if situation_start:
+        fielder_index = [None, 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9']
+        defensive_play = defensive_plays[curr_situation]
+        
+        ## First, find the guy fielding the ball and place the ball relative to him
+        for fielder, role in enumerate(defensive_play[1:]):
+            
+            if role == 1:
+                fielder_id = fielder_index[fielder + 1]
+                fielder_pos = pos_standard[fielder_id]  # pass 'f1', 'f2' etc. to get standard pos
+                ball_pos = (fielder_pos[0] - 150, fielder_pos[1] - 150)
+
+        ## Next, assign goals to all 9 defensive players. This requires ball_pos
+        for fielder, fielder_action_id in enumerate(defensive_play[1:]):
+            fielder_id = fielder_index[fielder + 1]
+            
+            if fielder_action_id == 1:
+                fielder_objects[fielder_id].assign_goal(ball_pos)
+            
+            elif fielder_action_id == 2:
+                backup_pos = (ball_pos[0]-70, ball_pos[1]-70)
+                fielder_objects[fielder_id].assign_goal(backup_pos)
+                
+            else:
+                fielder_goal = pos_coverage[fielder_action_id]
+                fielder_objects[fielder_id].assign_goal(fielder_goal)   
+
+    # Display the ball           
     pygame.draw.circle(screen, 'grey', ball_pos, 10)
     
-    if situation_start:
-        assignments_sit_3 = [ ('f1', 100),
-                        ('f2', 101),
-                        ('f3', 102), 
-                        ('f4', 103),  
-                        ('f5', 104),
-                        ('f6', 105),
-                        ('f7', 106),
-                       ]
+    #x, y = (1400, 1100)
+    #draw_text(str(defensive_play), 'black', (x, y), setup.font15, 1)
+
+    
+    """    
+ 
 
         for assignment in assignments_sit_3:
             fielder_id = assignment[0]
@@ -163,38 +232,10 @@ def situation_3(situation_start):
         f8 = (ball_pos[0]+50, ball_pos[1]-120)
         fielder_objects['f8'].assign_goal(f8)           
         fielder_objects['f9'].assign_goal(ball_pos)
-           
-        return False # Turn off the situation initialization 
-
-def situation_7(situation_start):
-    # Single to LF with runner on 2B (and any others or no others)
-    # 107: _107, 111: _111, 115: _115, 116: _116, 119: _119, 120: _120
-    
-    ball_pos = (500, 400)
-    pygame.draw.circle(screen, 'grey', ball_pos, 10)
-    
-    if situation_start:
-        assignments_sit_7 = [ ('f1', 116),
-                        ('f2', 111),
-                        ('f3', 102), 
-                        ('f4', 107),  
-                        ('f5', 119),
-                        ('f6', 120),
-                        ('f9', 115),
-                       ]
-        for assignment in assignments_sit_7:
-            fielder_id = assignment[0]
-            coverage_id = assignment[1]
-            
-            fielder_goal = pos_coverage[coverage_id]
-            
-            fielder_objects[fielder_id].assign_goal(fielder_goal)      
-
-        f8 = (ball_pos[0]+50, ball_pos[1]-120)
-        fielder_objects['f8'].assign_goal(f8)           
-        fielder_objects['f7'].assign_goal(ball_pos)
+        """
         
-        return False # Turn off the situation initialization 
+    return False, ball_pos  # Turn off situation start
+
 
 ##### ***** MAIN LOOP ***** #####
 
@@ -221,6 +262,7 @@ while not exit:
             if event.key == K_ESCAPE:
                 exit = True
 
+            ## Movement keys
             if event.key == K_LEFT or event.key == K_KP4:
                 left = True
             
@@ -248,6 +290,21 @@ while not exit:
             if event.key == K_KP1:
                 south = True
                 left = True
+                
+            ## Option selection keys
+            for i, num_key in enumerate( [K_0, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9] ):
+                if event.key == num_key:
+                    num_keys[i] = True 
+                    
+            ## Reset situations
+            if event.key == K_c:
+                num_keys = [False] * 10
+                curr_situation = 0
+            
+            if event.key == K_s:
+                situation_start = True
+            
+            
 
             ### Set up stuff 
 
@@ -321,21 +378,25 @@ while not exit:
     if measuring_tape:
         draw_measuring_tape()
 
+
     ## Update baseball plays 
-    if situation_3_bool:
-        situation_start = situation_3(situation_start)
+    curr_situation, num_keys = choose_situation(curr_situation, num_keys, defensive_plays)
+    situation_start, ball_pos = do_situation(curr_situation, defensive_plays, pos_coverage, pos_standard, situation_start, ball_pos)
     
-    if situation_7_bool:
-        situation_start = situation_7(situation_start)
+    ## Reset fielders upon pressing 'c'
+    if curr_situation == 0:
+        fielder_objects = setup.make_fielders(pos_standard, screen)
     
+
     ## Update and draw fielders
     for fielder in fielder_objects.values():
         fielder.goal_move()
         
-        #if not( fielder.get_goal() ):        
-        #    fielder.move_man(left, right, north, south) ## This overwrites the goal-setting animation unless only called when no goal
+        if not( fielder.get_goal() ):        
+            fielder.move_man(left, right, north, south) ## This overwrites the goal-setting animation unless only called when no goal
         fielder.detect_collisions(base_rects)
         fielder.draw_fielder()
+        
     
     ## For now, just focus on one baserunner
     baserunner.goal_move()
