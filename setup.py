@@ -9,11 +9,15 @@ import numpy as np
 
 from ffielder import Fielder
 from bbaserunner import Baserunner
+from helpers import Helpers
 
 pygame.init()
 
 class Setup:
-    def __init__(self):
+    def __init__(self, screen):
+        
+        self.screen = screen
+        self.helper = Helpers(screen)
         
         #Boundaries
         self.x_centre_line = 950
@@ -33,16 +37,15 @@ class Setup:
         self.base_size = 10  ## 10 this is much smaller than diamond.png shows the bases, but converts to 3.6' square
         self.base_centroids = self.get_base_centroids()
         
-        ## Conversion factors
+        ## Conversion factors DELETE
         self.pixels_per_foot = 2.8088 ## Calculated in Google Sheets by averaging distance between 1B-3B and 2B-Home 
         self.pixels_per_step = self.pixels_per_foot * 2.5 
-     
+        
+        ## Fonts     
         self.font12 = pygame.font.SysFont('Arial', 12) 
         self.font15 = pygame.font.SysFont('Arial', 15) #pygame.font.Font('freesansbold.ttf', 15)
         self.font20 = pygame.font.SysFont('Arial', 18)
-        
-        
-        
+
         
     ## Hard coded coordinates for the OF corners, CF wall, and tip of home plate
     def get_boundaries(self):
@@ -82,58 +85,51 @@ class Setup:
         return base_rects
     
    
-    def get_pos_standard(self, base_centroids):
-        
-        """ Baseball strategies, ABA, p.229 --> NW, NE
-        3: 9 over, 12 back --> (9, 12)
-        4: 5 over, 15 back --> (-5, 12)
-        5: 7 over, 12 back --> (12, 7)
-        6: 7 over, 15 back --> (15, -7)
-        """              
-        
+    def get_fielder_standard_coord(self, base_centroids):
+
         ## Get pos for INF f3 - f6 
-        inf_steps_adjust = {"f3": [(9, 12), "one_B" ],
-                            "f4": [(-5, 12), "two_B"],
-                            "f5": [(12, 7), "three_B"], 
-                            "f6": [(15, -7), "two_B"], 
+        # Baseball strategies, ABA, p.229 --> NW, NE | E.g., F3: 9 over, 12 back from 1B --> (9, 12)
+        inf_steps_adjust = {3: [(9, 12), "one_B" ],
+                            4: [(-5, 12), "two_B"],
+                            5: [(12, 7), "three_B"], 
+                            6: [(15, -7), "two_B"], 
                             }
 
-        pos_standard = {}
+        fielder_standard_coord = {}
         
         for key, value in inf_steps_adjust.items():
             steps = value[0]            
             base_id = value[1]    
+            
             old_coord = base_centroids[base_id]
+            new_coord = self.helper.convert_steps_to_pos(old_coord, steps) 
             
-            new_coord = self.convert_steps_to_pos(old_coord, steps) 
-            
-            pos_standard[key] = new_coord
+            fielder_standard_coord[key] = new_coord
 
-
-        ## Get pos for f1, f2
-        pos_standard['f1'] = base_centroids['rubber_P']
-        pos_standard['f2'] = base_centroids['four_B']
+        ## Get coord for f1, f2
+        fielder_standard_coord[1] = base_centroids['rubber_P']
+        fielder_standard_coord[2] = base_centroids['four_B']
         
-        ## Get pos for OF
-        pos_standard['f7'] = self.LF
-        pos_standard['f8'] = self.CF
-        pos_standard['f9'] = self.RF
+        ## Get coord for OF
+        fielder_standard_coord[7] = self.LF
+        fielder_standard_coord[8] = self.CF
+        fielder_standard_coord[9] = self.RF
         
-        return pos_standard
+        return fielder_standard_coord
   
     
-    ## Create 9 instances of 'Man' object and return in a dict -- f1 to f9 
-    def make_fielders(self, pos_standard, screen):
-        fielder_ids = ['f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9']
+    ## Create 9 instances of 'Man' object and return in a dict -- 1 to 9 
+    def make_fielders(self, fielder_standard_coord, screen):
 
         fielder_objects = {}
         
-        for fielder_id in fielder_ids:
-            pos = pos_standard[fielder_id]                
+        for fielder_id in [1, 2, 3, 4, 5, 6, 7, 8, 9]:
+            pos = fielder_standard_coord[fielder_id]                
             fielder_objects[fielder_id] = Fielder(screen, pos, fielder_id)
             
-            
         return fielder_objects
+    
+    
     
     
     def make_baserunners(self, screen):
@@ -147,7 +143,7 @@ class Setup:
         """
 
     
-    def get_pos_coverage(self, base_centroids):
+    def get_defensiveSit_fielder_coord(self, base_centroids):
         sprite_size = 32 - 13 # Playing with numbers to get the fielder very close to where he needs to be 
         B1 = base_centroids['one_B'] 
         B2 = base_centroids['two_B']
@@ -157,7 +153,7 @@ class Setup:
 
         # 100   | 1 backs up 2B
         steps = ( 12, 4 ) #NW, NE
-        _100 = self.convert_steps_to_pos(rubber, steps)   #(B2[0] -30, B2[1] + 55)
+        _100 = self.helper.convert_steps_to_pos(rubber, steps)   #(B2[0] -30, B2[1] + 55)
 
         # 101      | Catcher trails the runner to 1B 
         _101 = (B1[0] + 25, B1[1] + 45)
@@ -167,7 +163,7 @@ class Setup:
         
         # 103   | 4 cutoff to 2B 
         steps = (-1, 40) #NW, NE
-        _103 = self.convert_steps_to_pos(B2, steps) 
+        _103 = self.helper.convert_steps_to_pos(B2, steps) 
         
         # 104   | 5 covers 3B
         _104 = (B3[0] , B3[1] - sprite_size)
@@ -177,7 +173,7 @@ class Setup:
         
         # 106   | 7 backs up 2B from RF throw
         steps = (20, -15)  #NW, NE
-        _106 = self.convert_steps_to_pos(B2, steps)
+        _106 = self.helper.convert_steps_to_pos(B2, steps)
         
         # 107    | cover_4_2B
         _107 = _105
@@ -234,24 +230,25 @@ class Setup:
         
         """ 
         
-        pos_coverage = {    
+        defensiveSit_fielder_coord = {    
                         100: _100, 101: _101, 102: _102, 103: _103, 104: _104, 105: _105, 106: _106,
                         107: _107, 108: _108, 109: _109, 110: _110, 111: _111, 112: _112, 113: _113,
                         114: _114, 115: _115, 116: _116, 117: _117, 119: _118, 119: _119, 120: _120,
                         121: _121             
                         }
 
-        return pos_coverage
+        return defensiveSit_fielder_coord
+
    
-    def get_defensive_plays(self, pos_coverage):
+    def get_defensiveSit_plays(self, defensiveSit_fielder_coord):
        
-        ## pos_coverage is the dict with all coordinates for defensive actions numbered as keys from 100 - ???
+        ## defensiveSit_fielder_coord is the dict with all coordinates for defensive actions numbered as keys from 100 - ???
         # Below, each defensive play is a key, and the list of 0-9 provides plays for all defensive players
         # 1 = field the ball
         # 2 = back up the guy fielding the ball
         # 0th position is the string description of the play
         
-        defensive_plays = {3: ["Nobody on, single to LF", 100, 101, 102, 107, 104, 109, 1, 2, 115],
+        defensiveSit_plays = {3: ["Nobody on, single to LF", 100, 101, 102, 107, 104, 109, 1, 2, 115],
                             4: ["Nobody on, single to CF", 100, 101, 102, 107, 104, 108, 2, 1, 2],
                             5: ["Nobody on, single to RF", 100, 101, 102, 103, 104, 105, 106, 2, 1],
                             6: ["R1, single to LF", 110, 111, 102, 107, 104, 114, 1, 2, 115],
@@ -262,39 +259,6 @@ class Setup:
                             11: ["R2, single to RF", 116, 111, 118, 112, 104, 105, 121, 2, 1],           
         }
        
-        defensive_plays_index = {}
+        defensiveSit_plays_index = {}
        
-        return defensive_plays
-                
-    ## Do trionometry to convert 'steps over' and 'steps back' in baseball to Pygame coordinates   
-    def convert_steps_to_pos(self, old_coord, steps): 
-        
-        # 1. Get delta_x and delta_y for 'steps over' and same for 'steps back' -- ignore direction for now / only positive 
-        nw_feet_abs = np.sqrt( (steps[0] **2)/2 )
-        ne_feet_abs = np.sqrt( (steps[1] **2)/2 )
-        
-        # 2. Package these deltas into an np array
-        feet_abs = np.array([ [nw_feet_abs, nw_feet_abs], [ne_feet_abs, ne_feet_abs] ])
-           
-        # 3. Apply direction to all 4 deltas  
-        direction_constants = np.array([ [-1, -1 ],  [1, -1] ])    # NW = -x, -y | NE = x, y
-        
-        NW_direct = np.sign( steps[0] )
-        NE_direct = np.sign( steps[1] )
-        step_directions = np.array([ [NW_direct, NW_direct], [NE_direct, NE_direct] ])
-                                             
-        direction_factors = step_directions * direction_constants
-      
-        all_delta_xy = feet_abs * direction_factors
-            
-        # 4. Sum x's and y's to get one delta for each -- superposition
-        x = np.sum(all_delta_xy[:, 0])
-        y = np.sum(all_delta_xy[:, 1])
-        
-        # 5. Recombine and convert to pixels 
-        super_deltas = np.array([ x, y]) * self.pixels_per_step        
-        
-        # 6. Return absolute pos
-        return old_coord + super_deltas
-    
-    
+        return defensiveSit_plays

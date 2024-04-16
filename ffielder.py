@@ -15,16 +15,18 @@ class Fielder(Man):
 
     def __init__(self, screen, pos, fielder_id):
 
-        super().__init__(screen, pos, "fielder") #Inheret all Mankind
+        super().__init__(screen, pos, fielder_id) #Inheret all Mankind
         self.screen = screen
 
-        self.fielder_id = fielder_id
+        #self.fielder_id = fielder_id
         self.goal_pos = (0,0)
+
 
     # Fielder objective
     def assign_goal(self, goal_pos):
         self.goal_pos = self.offset_pos(goal_pos)
         self.goal = True
+
         
     # Fielder motion 
     def goal_move(self):
@@ -60,6 +62,7 @@ class Fielder(Man):
             if abs(x_journey) <= 2 and abs(y_journey) <= 2:
                 self.goal = False
                 #print("Goal cancelled for: ", self.fielder_id)
+
        
     # Detect collisions #One for fielders, one for baserunners
     def detect_collisions(self, bases):

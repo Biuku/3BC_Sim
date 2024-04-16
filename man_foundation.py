@@ -2,20 +2,18 @@
 
 import pygame
 from pygame.locals import *
-#from pygame.sprite import Sprite
+from helpers import Helpers
 
 from itertools import cycle ## lets you cycle through a list [10, 11, 12] so upon 12 it returns to index 0
 
-colour_white = (255, 255, 255)
-colour_red = (255, 0, 0)
 
-class Man(): 
+class Man: 
 
     def __init__(self, screen, pos, man_id):
 
         self.screen = screen
         self.man_id = man_id
-        
+        self.helper = Helpers(self.screen)
         
         #### ANIMATION -- set up of frames ####
         
@@ -95,7 +93,7 @@ class Man():
         self.fielder_rect.topleft = self.agnostic_pos
 
         ### Meta attributes -- colours for boxes used during development
-        self.rect_colour = colour_white
+        self.rect_colour = 'white' 
         self.rect_thickness = 1
  
     
@@ -164,8 +162,12 @@ class Man():
         ## Write fielder ID on fielder
         font = pygame.font.SysFont('Arial', 12)
         x = self.fielder_rect.x + 16
-        y = self.fielder_rect.y + 40
-        self.draw_text(self.fielder_id, 'black', (x, y), font, 2)
+        y = self.fielder_rect.y + 42
+        
+        text = "F" + str(self.man_id)
+        
+        #self.draw_text(text, 'black', (x, y), font, 2)
+        self.helper.draw_text(text, 'black', (x, y), font, 2)
             
       
     def draw_baserunner(self):
@@ -211,15 +213,3 @@ class Man():
         
         return (x, y)
    
-   
-    def draw_text(self, string_, colour, coord, font, justification):
-    
-        text = font.render(string_, True, colour)
-        text_rect = text.get_rect()
-     
-        text_rect.topleft = coord
-
-        if justification == 2: 
-            text_rect.center = coord
-            
-        self.screen.blit(text, text_rect)
