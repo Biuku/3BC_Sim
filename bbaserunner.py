@@ -52,15 +52,11 @@ class Baserunner(Man):
         elif self.base_attained == 3:
             goal_pos = self.base_centroids['four_B']
         
-        #goal_pos = [goal_pos[0], goal_pos[1]] # Reformat to be modifiable
-        
         self.goal_pos = self.offset_pos(goal_pos)
-        
-        
+          
 
-    def goal_move(self):
-        self.moving = False
-        
+    def move_baserunner(self, left, right, north, south):  
+              
         if self.goal:
  
             x_journey = self.goal_pos[0] - self.agnostic_pos[0]
@@ -80,10 +76,6 @@ class Baserunner(Man):
             elif y_journey > 0: 
                 south = True
             
-            ## Only advance the animatio when moving 
-            if right or left or north or south:
-                self.moving = True
-            
             # Cheat -- use the kb_move func to move the guy 
             self.move_man( left, right, north, south)
             
@@ -92,6 +84,9 @@ class Baserunner(Man):
                 self.goal = False
                 print("Goal cancelled for baserunner: ")
  
+        else:
+            self.move_man(left, right, north, south)
+
             
     # Detect collisions #One for fielders, one for baserunners
     def detect_collisions(self, bases, fielders):
@@ -119,7 +114,7 @@ class Baserunner(Man):
           
         ## To do -- detect collisions with fielders
                     
-        self.display_baserunner_status()
+        #self.display_baserunner_status()
     
     def update_base_attained(self, base_collision):
         
@@ -145,6 +140,11 @@ class Baserunner(Man):
                     if base_collision == 'four_B':
                         self.score_run()
         
+    ## Called by GamePlay
+    def get_base_attained(self):
+        return self.base_attained
+    
+    """
     def display_baserunner_status(self):
         
         ### Meta -- display the latest base attained
@@ -159,7 +159,8 @@ class Baserunner(Man):
         text_base_attained_rect.topleft = pos
         
         self.screen.blit(text_base_attained, text_base_attained_rect)       
-        
+    """
+     
     def score_run(self):
         print("Woopie doo. You got a run") 
         

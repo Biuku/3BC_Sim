@@ -30,16 +30,6 @@ class Ball:
         self.colour = 'grey' 
         self.size = 8
  
-    def reset_ball(self, coord):
-        self.coord = coord
-        self.goal = False
-        self.moving = False
-        
-    def get_coord(self):
-        return self.coord
-        
-    def update_coord(self, coord):
-        self.coord = coord
     
     def move_ball(self, left, right, north, south):
         x =  self.coord[0]
@@ -81,12 +71,30 @@ class Ball:
     
 
     def draw_ball(self):
-        pygame.draw.circle(self.screen, self.colour, self.coord, self.size)
-                
+        pygame.draw.circle(self.screen, self.colour, self.coord, self.size )
         
-    def get_goal(self):
-        return self.goal                                
+        ring_size = self.size + 0
+        pygame.draw.circle(self.screen, 'white', self.coord, ring_size, 2)
+        
    
+    def click_move_ball(self):
+        self.coord = pygame.mouse.get_pos()
+        
+   
+    ### Get, update, etc... ###
+    def reset_ball(self, coord):
+        self.coord = coord
+        self.goal = False
+        self.moving = False
+        
+    def get_coord(self):
+        return self.coord
+        
+    def update_coord(self, coord):
+        self.coord = coord
+     
+    def get_goal(self):
+        return self.goal            
     
     # LEFT OVER FROM MAN_FOUNDATION -- DO I NEED THIS? 
     def offset_pos(self, coord):

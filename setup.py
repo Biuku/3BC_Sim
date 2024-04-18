@@ -21,9 +21,9 @@ class Setup:
         
         #Boundaries
         self.x_centre_line = 950
-        self.lf_corner = (103, 390)
+        self.lf_foulPole = (52, 348) #(103, 390) <-- this was the warning track ...
         self.cf_wall = (self.x_centre_line, 35)
-        self.rf_corner = (1780, 410)
+        self.rf_foulPole = (1830, 365) #(1780, 410)
         self.four_B_tip = (self.x_centre_line, 1245)
 
         ## OF positions
@@ -49,9 +49,9 @@ class Setup:
         
     ## Hard coded coordinates for the OF corners, CF wall, and tip of home plate
     def get_boundaries(self):
-        pos_boundaries = {  "lf_corner":    (103, 390), 
+        pos_boundaries = {  "lf_foulPole":    self.lf_foulPole, 
                              "cf_wall":     (self.x_centre_line, 35), 
-                             "rf_corner":   (1780, 410), 
+                             "rf_foulPole":   self.rf_foulPole, 
                              "four_B_tip":  (self.x_centre_line, 1245)
                         }
         return pos_boundaries 
@@ -129,8 +129,7 @@ class Setup:
             
         return fielder_objects
     
-    
-    
+      
     
     def make_baserunners(self, screen):
         return Baserunner(screen, self.base_centroids)

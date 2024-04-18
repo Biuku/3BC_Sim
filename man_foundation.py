@@ -98,6 +98,11 @@ class Man:
  
     
     def move_man(self, left, right, north, south):
+        ## Only advance the animatio when moving 
+        self.moving = False
+        if right or left or north or south:
+            self.moving = True
+        
         self.direction_facing = 0 # 0 = None 1 = left | 2 = right | 3 = north
         x =  self.agnostic_pos[0]
         y =  self.agnostic_pos[1]

@@ -14,8 +14,6 @@ from helpers import Helpers
 
 pygame.init()
 
-w = 2000 #3400 #= optimal for my widescreen
-
 
 class GamePlay:
     
@@ -29,7 +27,7 @@ class GamePlay:
 
         ### Data ### 
         ## Collections of coordinates
-        self.pos_boundaries = self.setup.get_boundaries()  # lf_corner, cf_wall, rf_corner, four_B_tip
+        self.boundary_coords = self.setup.get_boundaries()  # lf_corner, cf_wall, rf_corner, four_B_tip
         self.base_centroids = self.setup.base_centroids  # one_B, two_B, three_B, four_B, rubber_P
         self.fielder_standard_coord = self.setup.get_fielder_standard_coord(self.base_centroids) # Standard fielder pre-pitch coordinates: 1-9
         self.defensiveSit_fielder_coord = self.setup.get_defensiveSit_fielder_coord(self.base_centroids)
@@ -41,19 +39,23 @@ class GamePlay:
         # Fielders and baserunners
         self.fielder_objects = self.setup.make_fielders(self.fielder_standard_coord, self.screen) #None # Placeholder
         self.baserunner = self.setup.make_baserunners(self.screen) #None # Placeholder
-        #self.reset_fielders() 
-        #self.reset_baserunners() # 
+        self.bases_attained = {1: False, 2: False, 3: False, 4: False}
         
         ## Game status 
         self.curr_defensiveSit = 0
         self.num_keys = [False] * 10 ## Keep track of multiple num keys pressed above the kb
         
         #Toggles
-        self.baserunner_advance = False
         self.situation_start = False
+        
+        ## On-screen instructions
+        self.instructions_x = self.instructions_master_x = 1400
+        self.instructions_y = self.instructions_master_y = 850
 
     
     def choose_situation(self): #curr_defensiveSit, num_keys, defensiveSit_plays
+        
+        #     self.print_instructions() # Static instructions
         
         ## Let the user enter 2 digits
         for i, val in enumerate(self.num_keys):
@@ -70,30 +72,89 @@ class GamePlay:
         
         self.reset_numkeys()
 
-        ### Write instructions: key assignments for coverage situations     
-        x, y = 1400, 950
+        self.print_situation_choice() # Dynamic instructions -- update each game loop if user enters a choice
+            
+
+    def print_instructions(self): 
+        ### Write static game instructions to the screen
         
-        instructions_text = "Press 'c' to reset situations. Press 's' to activate current situation"
-        self.helper.draw_text(instructions_text, 'black', (x, y), self.setup.font20, 1)
-    
-        y += 20
+        text_indent = 30
+         
+        instruction_text = [
+            "INSTRUCTIONS",
+            "Press 'B' to show Boundary Markers",
+            "Press 'D' to show Defensive Situation Markers",
+            "Select a Defensive Situation: ",
+        ]
+        
+        self.instructions_y = self.helper.print_instruction_iterable(instruction_text, self.instructions_x, self.instructions_y)
+        
+        ## Indent text
+        self.instructions_x += text_indent
+        
+        instruction_text = [
+            "- Press 'C' to reset situations",
+            "- Press 'S' to activate current situation",
+        ]
+        
+        self.instructions_y = self.helper.print_instruction_iterable(instruction_text, self.instructions_x, self.instructions_y)
+        
+        self.instructions_x -= text_indent
+
+
+    def print_situation_choice(self):
+        
+        ### Write instructions: key assignments for coverage situations 
+        self.instructions_y += 10 # Create an extra break before displaying the choice
+        x, y = self.instructions_x, self.instructions_y 
+ 
         self.helper.draw_text("You pressed: ", 'black', (x, y), self.setup.font20, 1)
         
         x += 120
         self.helper.draw_text(str(self.curr_defensiveSit), 'black', (x, y), self.setup.font20, 1)
-        
+
+        ## If they entered a valid defensive play, show it
         x += 40
         if self.curr_defensiveSit in self.defensiveSit_plays:
             text = self.defensiveSit_plays[self.curr_defensiveSit][0]
             self.helper.draw_text(text, 'black', (x, y), self.setup.font20, 1)
+    
+        ## Move the cursor down for the Base Attained instruction 
+        self.instructions_y += 30
+        
+    def print_baserunner_status(self):
+        #return
+        ### Meta -- display the latest base attained
+        base_attained = self.baserunner.get_base_attained()
+        x, y = self.instructions_x, self.instructions_y
+        
+        self.helper.draw_text("BASES", 'black', (x, y), self.setup.font20, 1)
+        
+        y += 20
+        
+        text = "No bases attained"
+                
+        if base_attained > 0:
+            text = "Highest base attained: " + str(base_attained) + "B" 
+        
+        self.helper.draw_text(text, 'black', (x, y), self.setup.font20, 1)
+        
 
-
-    def do_situation(self): #curr_defensiveSit, defensiveSit_plays, defensiveSit_fielder_coord, situation_start, ball_coord
+    
+    ## After each game loop I need to return the coord of instructions to its start
+    def reset_instructionCoord(self):
+        self.instructions_x = self.instructions_master_x
+        self.instructions_y = self.instructions_master_y
+        
+    
+    def do_situation(self): #curr_defensiveSit, defensiveSit_plays, defensiveSit_fielder_coord, situation_start, ball_coord        
 
         if self.situation_start:
 
             if self.curr_defensiveSit in self.defensiveSit_plays:
                 
+                # For now, set the ball's coord relative to the active fielder's coord
+                self.set_ball_coord()
                 ball_coord = self.ball.get_coord()
                 
                 defensiveSit_play = self.defensiveSit_plays[self.curr_defensiveSit]
@@ -106,15 +167,12 @@ class GamePlay:
                         self.fielder_objects[fielder_id].assign_goal(ball_coord)
                     
                     elif fielder_action_id == 2:
-                        backup_pos = (ball_coord[0]-70, ball_coord[1]-70)
-                        self.fielder_objects[fielder_id].assign_goal(backup_pos)
+                        backup_coord = (ball_coord[0]-70, ball_coord[1]-70)
+                        self.fielder_objects[fielder_id].assign_goal(backup_coord)
                         
                     else:
                         fielder_goal = self.defensiveSit_fielder_coord[fielder_action_id]
                         self.fielder_objects[fielder_id].assign_goal(fielder_goal)   
-
-        # Display the ball           
-        self.ball.draw_ball()
         
         # Reset initiation of a new situation
         self.situation_start = False
@@ -133,11 +191,19 @@ class GamePlay:
                         
                     if role == 1:
                         fielder_id += 1 
-                        fielder_pos = self.fielder_standard_coord[fielder_id]  # pass 'f1', 'f2' etc. to get standard pos
+                        fielder_coord = self.fielder_standard_coord[fielder_id]  # pass 'f1', 'f2' etc. to get standard pos
                         
-                        new_ball_coord = (fielder_pos[0] - 150, fielder_pos[1] - 150)
+                        new_ball_coord = (fielder_coord[0] - 150, fielder_coord[1] - 150)
                         self.ball.update_coord(new_ball_coord)
+    
+    
+    def move_ball(self, moving_ball_bool):
+        if moving_ball_bool:
+            self.ball.click_move_ball()
+    
+        self.ball.draw_ball()
 
+    
     def move_fielders(self, left, right, north, south):
         for fielder in self.fielder_objects.values():
             fielder.goal_move()
@@ -148,18 +214,17 @@ class GamePlay:
             
             fielder.draw_fielder()
     
+    
     def move_baserunners(self, left, right, north, south):
-        self.baserunner.goal_move()
-        
-        if not( self.baserunner.get_goal() ): 
-            self.baserunner.move_man(left, right, north, south)  ## This overwrites the goal-setting animation unless only called when no goal
+        self.baserunner.move_baserunner(left, right, north, south)
         
         self.baserunner.detect_collisions(self.base_rects, self.fielder_objects)
         
         self.baserunner.draw_baserunner()
         
-    
-    
+        self.print_baserunner_status()
+        
+
 ### Update value, get value... ### 
     
     def reset_fielders(self):
@@ -183,6 +248,5 @@ class GamePlay:
     def update_situation_start(self, bool_):
         self.situation_start = bool_
         
-    def update_baserunner_advance(self, bool_):
-        self.baserunner_advance = bool_
+    def advance_baserunner(self):
         self.baserunner.assign_goal()
