@@ -59,7 +59,7 @@ class Helpers:
         distance_in_pixels = self.measure_distance_in_pixels(start_pos, end_pos)
         
         return distance_in_pixels / pixels_to_feet 
-
+    
     
     def measure_distance_in_pixels(self, start_pos, end_pos):
         
@@ -67,6 +67,27 @@ class Helpers:
         distance_in_pixels = math.sqrt( ( end_pos[0] - start_pos[0] )**2  +  ( end_pos[1] - start_pos[1] )**2 )
         
         return distance_in_pixels 
+
+
+    ## Get end-coord coord from start_coord, angle theta, and distance 
+    def theta_to_endCoord(self, start_coord, theta_deg, dist_pixels):
+        
+        theta_rad = math.radians(theta_deg)
+        end_x = start_coord[0] + dist_pixels * math.cos(theta_rad)
+        end_y = start_coord[1] - dist_pixels * math.sin(theta_rad) # Negative because Pygame Y axis
+        
+        return (end_x, end_y)
+
+    
+    def coord_to_theta(self, start_coord, end_coord):
+        adj = dx = end_coord[0] - start_coord[0]
+        opp = dy = -1 * (end_coord[1] - start_coord[1]) # Negative because Pygame Y axis
+        hyp = math.sqrt(adj**2 + opp**2)
+        
+        theta_rad = math.acos(adj/hyp)
+        
+        return theta_rad
+    
     
     def get_y_for_given_feet(self, start_pos, end_x, dist):
 
@@ -77,6 +98,7 @@ class Helpers:
         distance_in_pixels = math.sqrt( ( end_pos[0] - start_pos[0] )**2  +  ( end_pos[1] - start_pos[1] )**2 )
         
         return distance_in_pixels / pixels_to_feet 
+
 
     ## Do trionometry to convert 'steps over' and 'steps back' in baseball to Pygame coordinates   
     def convert_steps_to_pos(self, old_coord, steps): 

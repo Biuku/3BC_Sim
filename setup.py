@@ -19,12 +19,20 @@ class Setup:
         self.screen = screen
         self.helper = Helpers(screen)
         
-        #Boundaries
+        #Boundary coord
         self.x_centre_line = 950
-        self.lf_foulPole = (52, 348) #(103, 390) <-- this was the warning track ...
+        self.lf_foulPole = (58, 356) #(103, 390) <-- this was the warning track ...
         self.cf_wall = (self.x_centre_line, 35)
-        self.rf_foulPole = (1830, 365) #(1780, 410)
+        self.rf_foulPole = (1839, 355) #(1780, 410)
         self.four_B_tip = (self.x_centre_line, 1245)
+        self.main_centroid = (950, 1430) # This is the centre of the circle describing the OF wall / warning track (Not useful for foul lines)
+
+        # Boundary thetas -- from Home in degrees
+        self.lf_foulPole_deg = 135
+        self.cf_deg = 90
+        self.rf_foulPole_deg = 45
+        self.cf_left_deg = 105
+        self.cf_right_deg = 75
 
         ## OF positions
         self.mid_depth_OF = 550
@@ -52,10 +60,32 @@ class Setup:
         pos_boundaries = {  "lf_foulPole":    self.lf_foulPole, 
                              "cf_wall":     (self.x_centre_line, 35), 
                              "rf_foulPole":   self.rf_foulPole, 
-                             "four_B_tip":  (self.x_centre_line, 1245)
+                             "four_B_tip":  (self.x_centre_line, 1245),
+                             "main_centroid": self.main_centroid,
                         }
         return pos_boundaries 
         
+
+    def get_boundary_thetas(self):
+        """
+        - LF pole = 135°
+        - RF pole = 45°
+        - CF pole = 90°
+        
+        So... 
+            - There's 90° between the foul poles -- or 30° per OF
+            - LF-CF line should be 90 + 15 = 105°
+            - CF-RF line should be 90 - 15 = 75° 
+        """
+    
+        boundary_thetas = {
+                            "lf_foulPole_deg": self.lf_foulPole_deg, 
+                            "cf_deg": self.cf_deg,
+                            "rf_foulPole_deg": self.rf_foulPole_deg,
+                            "cf_left_deg": self.cf_left_deg,
+                            "cf_right_deg": self.cf_right_deg,
+                        }
+        return boundary_thetas
 
     ## Hard coded coordinates for the centre-of-mass of each of the 4 bases    
     def get_base_centroids(self):

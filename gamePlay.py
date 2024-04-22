@@ -28,6 +28,9 @@ class GamePlay:
         ### Data ### 
         ## Collections of coordinates
         self.boundary_coords = self.setup.get_boundaries()  # lf_corner, cf_wall, rf_corner, four_B_tip
+        
+        self.boundary_thetas = self.setup.get_boundary_thetas()
+                
         self.base_centroids = self.setup.base_centroids  # one_B, two_B, three_B, four_B, rubber_P
         self.fielder_standard_coord = self.setup.get_fielder_standard_coord(self.base_centroids) # Standard fielder pre-pitch coordinates: 1-9
         self.defensiveSit_fielder_coord = self.setup.get_defensiveSit_fielder_coord(self.base_centroids)
@@ -122,6 +125,7 @@ class GamePlay:
         ## Move the cursor down for the Base Attained instruction 
         self.instructions_y += 30
         
+    
     def print_baserunner_status(self):
         #return
         ### Meta -- display the latest base attained
@@ -139,8 +143,18 @@ class GamePlay:
         
         self.helper.draw_text(text, 'black', (x, y), self.setup.font20, 1)
         
-
-    
+    ## Print the ball's location in baseball terms. Called from Main  > interpret_ball_location 
+    def print_ball_loc(self, text2):
+        x, y = self.instructions_x, self.instructions_y
+        
+        y += 60
+        text1 = "BALL LOCATION:"
+        self.helper.draw_text(text1, 'black', (x, y), self.setup.font20, 1)
+        y += 20
+        self.helper.draw_text(text2, 'black', (x, y), self.setup.font20, 1)
+         
+        
+        
     ## After each game loop I need to return the coord of instructions to its start
     def reset_instructionCoord(self):
         self.instructions_x = self.instructions_master_x
@@ -250,3 +264,6 @@ class GamePlay:
         
     def advance_baserunner(self):
         self.baserunner.assign_goal()
+        
+    def get_ball_coord(self):
+        return self.ball.get_coord()
