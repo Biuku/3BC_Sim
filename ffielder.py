@@ -7,6 +7,7 @@ import pygame
 from pygame.locals import *
 from man_foundation import Man
 from itertools import cycle ## lets you cycle through a list [10, 11, 12] so upon 12 it returns to index 0
+import math
 
 colour_white = (255, 255, 255)
 colour_red = (255, 0, 0)
@@ -34,6 +35,32 @@ class Fielder(Man):
         
         if self.goal:
             
+            self.moving = True
+            
+            ## 1. Get theta of journey
+            self.theta_rad = self.helper.coord_to_theta(self.agnostic_pos, self.goal_pos)
+
+            ## 3. Move baserunner in direction theta at speed, new_speed
+            x, y = self.agnostic_pos
+            x += self.man_speed_x * math.cos(self.theta_rad)
+            y -= self.man_speed_y * math.sin(self.theta_rad)  ## Do I need another speed for y??
+            self.agnostic_pos = (x, y)
+            
+            # Turn off goal seeking when they reach the goal
+            x_journey = self.goal_pos[0] - self.agnostic_pos[0]
+            y_journey = self.goal_pos[1] - self.agnostic_pos[1]
+            
+            if abs(x_journey) <= 2 and abs(y_journey) <= 2:
+                self.goal = False
+                   
+            self.direction_facing = self.get_direction_facing()
+
+        
+        """
+        self.moving = False
+        
+        if self.goal:
+            
             x_journey = self.goal_pos[0] - self.agnostic_pos[0] #self.fielder_rect.x
             y_journey = self.goal_pos[1] - self.agnostic_pos[1] #self.fielder_rect.y
             
@@ -57,12 +84,12 @@ class Fielder(Man):
                     
             # Cheat -- use the kb_move func to move the guy 
             self.move_man( left, right, north, south)
-            
+
             # Turn off goal seeking when they reach the goal
             if abs(x_journey) <= 2 and abs(y_journey) <= 2:
                 self.goal = False
                 #print("Goal cancelled for: ", self.fielder_id)
-
+        """
        
     # Detect collisions #One for fielders, one for baserunners
     def detect_collisions(self, bases):

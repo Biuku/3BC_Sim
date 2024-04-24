@@ -94,6 +94,10 @@ def draw_ball(ball_x, ball_y):
     pygame.draw.circle(screen, 'red', (ball_x, ball_y), 12 )
     
 
+def get_theta_rad(adj, opp):
+    return math.atan2(opp, adj)
+    
+
 """ *** META GOALS *** """
 """
 1. DONE! -- Get and print the length of opp and adj
@@ -140,7 +144,9 @@ while not exit:
     
     ### Trig -- medium stuff ###
     hyp = math.sqrt(adj**2 + opp**2)
-    theta_rad = math.acos(adj/hyp)
+    
+    #theta_rad = math.acos(adj/hyp)
+    theta_rad = get_theta_rad(adj, opp) 
     theta_deg = round(math.degrees(theta_rad), 1)
     
     ### Draw the triange
@@ -170,8 +176,8 @@ while not exit:
         length_text = "LENGTHS:"
         
         hyp_text = "HYP: " + str( int(hyp) )
-        adj_text = "ADJ: " + str( int(adj) )
-        opp_text = "OPP: " + str( int(opp) )
+        adj_text = "ADJ / dx: " + str( int(adj) )
+        opp_text = "OPP / dy: " + str( int(opp) )
         
         angle_text = "ANGLES"
         

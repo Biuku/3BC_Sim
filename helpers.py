@@ -81,10 +81,11 @@ class Helpers:
     
     def coord_to_theta(self, start_coord, end_coord):
         adj = dx = end_coord[0] - start_coord[0]
-        opp = dy = -1 * (end_coord[1] - start_coord[1]) # Negative because Pygame Y axis
+        opp = dy = -1 * (end_coord[1] - start_coord[1]) # -1 *    # Negative because Pygame Y axis
         hyp = math.sqrt(adj**2 + opp**2)
         
-        theta_rad = math.acos(adj/hyp)
+        #theta_rad = math.acos(adj/hyp)
+        theta_rad = math.atan2(opp, adj) # Got this formula from Chat GPT... I don't really understand trig well enough to know it intuitively
         
         return theta_rad
     

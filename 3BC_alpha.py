@@ -16,7 +16,7 @@ os.environ['SDL_VIDEO_WINDOW_POS'] = "%d, %d" %(1, 30) # Opens Pygame to top-lef
 ##### ***** INITIALIZE PYGAME ***** #####
 
 pygame.init()
-w = 3400 #3400 #= optimal for my widescreen
+w = 2500 #3400 #= optimal for my widescreen
 h = 1350
 screen = pygame.display.set_mode((w, h))
 setup = Setup(screen)
@@ -308,6 +308,11 @@ while not exit:
             
             if event.key == K_SPACE:
                 gamePlay.advance_baserunner()
+
+            ## Temp -- something got unstable and I need to be able to stop the baserunner from moving 
+            if event.key == K_q:
+                gamePlay.remove_baserunner_goal()
+                
             
             # End set up stuff
 

@@ -3,6 +3,7 @@
 import pygame
 from pygame.locals import *
 from helpers import Helpers
+import math
 
 from itertools import cycle ## lets you cycle through a list [10, 11, 12] so upon 12 it returns to index 0
 
@@ -70,11 +71,13 @@ class Man:
         #### MOTION AND POSITION  ####
         
         ### LOCOMOTION -- set up, including start position and speed of locomotion  
-        # TEMPORARILY INCREAING RUNNING SPEED TO MAKE TESTING FASTER/EASIER
+        # TEMPORARILY INCREASING RUNNING SPEED 67% TO "2" TO MAKE TESTING FASTER/EASIER
         self.man_speed_x = 2 #4/3 # Optimal speed of NSEW locomotion = 4/3 -- pixels of movement per frame
         self.man_speed_y = 2 #4/3
         self.man_diagonal_factor = 0.744 ## Diagonal motion is 1.35x faster than North-South or lateral motion -- this should equalize that.
         self.collision = False
+        
+        self.theta_rad = 0 ## 
         self.direction_facing = 0 # 0 = None 1 = left | 2 = right | 3 = north
         
         ### Agnostic position
@@ -96,10 +99,33 @@ class Man:
         self.rect_colour = 'white' 
         self.rect_thickness = 1
  
-    
+ 
+ 
+    def get_direction_facing(self):
+        theta_deg = math.degrees(self.theta_rad)
+        
+        ## Set a constant in deg that says how close I need to be to 90 and 180 for the man to not face North
+        left_right_threshold = 60
+
+        distance_from_left = abs( 180 - abs(theta_deg) )
+        distance_from_right = abs( 0 - abs(theta_deg) )
+
+        if distance_from_left < left_right_threshold:
+            return 1 # 1 = left
+            
+        if distance_from_right < left_right_threshold:
+            return 2 # 2 = right
+
+        return 3 # = North/South
+
+        
+        
     def move_man(self, left, right, north, south):
-        ## Only advance the animatio when moving 
+        ## Only advance the animation when moving
+               
+         
         self.moving = False
+        
         if right or left or north or south:
             self.moving = True
         

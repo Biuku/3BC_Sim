@@ -76,85 +76,7 @@ class GamePlay:
         self.reset_numkeys()
 
         self.print_situation_choice() # Dynamic instructions -- update each game loop if user enters a choice
-            
-
-    def print_instructions(self): 
-        ### Write static game instructions to the screen
-        
-        text_indent = 30
-         
-        instruction_text = [
-            "INSTRUCTIONS",
-            "Press 'B' to show Boundary Markers",
-            "Press 'D' to show Defensive Situation Markers",
-            "Select a Defensive Situation: ",
-        ]
-        
-        self.instructions_y = self.helper.print_instruction_iterable(instruction_text, self.instructions_x, self.instructions_y)
-        
-        ## Indent text
-        self.instructions_x += text_indent
-        
-        instruction_text = [
-            "- Press 'C' to reset situations",
-            "- Press 'S' to activate current situation",
-        ]
-        
-        self.instructions_y = self.helper.print_instruction_iterable(instruction_text, self.instructions_x, self.instructions_y)
-        
-        self.instructions_x -= text_indent
-
-
-    def print_situation_choice(self):
-        
-        ### Write instructions: key assignments for coverage situations 
-        self.instructions_y += 10 # Create an extra break before displaying the choice
-        x, y = self.instructions_x, self.instructions_y 
- 
-        self.helper.draw_text("You pressed: ", 'black', (x, y), self.setup.font20, 1)
-        
-        x += 120
-        self.helper.draw_text(str(self.curr_defensiveSit), 'black', (x, y), self.setup.font20, 1)
-
-        ## If they entered a valid defensive play, show it
-        x += 40
-        if self.curr_defensiveSit in self.defensiveSit_plays:
-            text = self.defensiveSit_plays[self.curr_defensiveSit][0]
-            self.helper.draw_text(text, 'black', (x, y), self.setup.font20, 1)
-    
-        ## Move the cursor down for the Base Attained instruction 
-        self.instructions_y += 30
-        
-    
-    def print_baserunner_status(self):
-        #return
-        ### Meta -- display the latest base attained
-        base_attained = self.baserunner.get_base_attained()
-        x, y = self.instructions_x, self.instructions_y
-        
-        self.helper.draw_text("BASES", 'black', (x, y), self.setup.font20, 1)
-        
-        y += 20
-        
-        text = "No bases attained"
-                
-        if base_attained > 0:
-            text = "Highest base attained: " + str(base_attained) + "B" 
-        
-        self.helper.draw_text(text, 'black', (x, y), self.setup.font20, 1)
-        
-    ## Print the ball's location in baseball terms. Called from Main  > interpret_ball_location 
-    def print_ball_loc(self, text2):
-        x, y = self.instructions_x, self.instructions_y
-        
-        y += 60
-        text1 = "BALL LOCATION:"
-        self.helper.draw_text(text1, 'black', (x, y), self.setup.font20, 1)
-        y += 20
-        self.helper.draw_text(text2, 'black', (x, y), self.setup.font20, 1)
-         
-        
-        
+                   
     ## After each game loop I need to return the coord of instructions to its start
     def reset_instructionCoord(self):
         self.instructions_x = self.instructions_master_x
@@ -239,6 +161,84 @@ class GamePlay:
         self.print_baserunner_status()
         
 
+
+### User input and print to screen ###
+
+    def print_instructions(self): 
+        ### Write static game instructions to the screen
+        
+        text_indent = 30
+         
+        instruction_text = [
+            "INSTRUCTIONS",
+            "Press 'B' to show Boundary Markers",
+            "Press 'D' to show Defensive Situation Markers",
+            "Select a Defensive Situation: ",
+        ]
+        
+        self.instructions_y = self.helper.print_instruction_iterable(instruction_text, self.instructions_x, self.instructions_y)
+        
+        ## Indent text
+        self.instructions_x += text_indent
+        
+        instruction_text = [
+            "- Press 'C' to reset situations",
+            "- Press 'S' to activate current situation",
+        ]
+        
+        self.instructions_y = self.helper.print_instruction_iterable(instruction_text, self.instructions_x, self.instructions_y)
+        
+        self.instructions_x -= text_indent
+
+
+    def print_situation_choice(self):
+        
+        ### Write instructions: key assignments for coverage situations 
+        self.instructions_y += 10 # Create an extra break before displaying the choice
+        x, y = self.instructions_x, self.instructions_y 
+ 
+        self.helper.draw_text("You pressed: ", 'black', (x, y), self.setup.font20, 1)
+        
+        x += 120
+        self.helper.draw_text(str(self.curr_defensiveSit), 'black', (x, y), self.setup.font20, 1)
+
+        ## If they entered a valid defensive play, show it
+        x += 40
+        if self.curr_defensiveSit in self.defensiveSit_plays:
+            text = self.defensiveSit_plays[self.curr_defensiveSit][0]
+            self.helper.draw_text(text, 'black', (x, y), self.setup.font20, 1)
+    
+        ## Move the cursor down for the Base Attained instruction 
+        self.instructions_y += 30
+        
+    ### Meta -- display the latest base attained
+    def print_baserunner_status(self):        
+        base_attained = self.baserunner.get_base_attained()
+        x, y = self.instructions_x, self.instructions_y
+        
+        self.helper.draw_text("BASES", 'black', (x, y), self.setup.font20, 1)
+        
+        y += 20
+        
+        text = "No bases attained"
+                
+        if base_attained > 0:
+            text = "Highest base attained: " + str(base_attained) + "B" 
+        
+        self.helper.draw_text(text, 'black', (x, y), self.setup.font20, 1)
+        
+    ## Print the ball's location in baseball terms. Called from Main  > interpret_ball_location 
+    def print_ball_loc(self, text2):
+        x, y = self.instructions_x, self.instructions_y
+        
+        y += 60
+        text1 = "BALL LOCATION:"
+        self.helper.draw_text(text1, 'black', (x, y), self.setup.font20, 1)
+        y += 20
+        self.helper.draw_text(text2, 'black', (x, y), self.setup.font20, 1)
+           
+ 
+
 ### Update value, get value... ### 
     
     def reset_fielders(self):
@@ -264,6 +264,9 @@ class GamePlay:
         
     def advance_baserunner(self):
         self.baserunner.assign_goal()
+        
+    def remove_baserunner_goal(self):
+        self.baserunner.remove_goal()
         
     def get_ball_coord(self):
         return self.ball.get_coord()
