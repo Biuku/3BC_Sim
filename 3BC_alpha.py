@@ -109,8 +109,8 @@ def draw_OF_wall():
     #### 2. Second, draw the perfectly symmetrical black wall and grey warning track
     
     ## Draw wall -- the true edge of the wall is the radius, but have to start drawing past it and inwards by its thickness 
-    wall_thickness = 12
-    pygame.draw.circle(screen, 'black', centroid, radius + wall_thickness, wall_thickness)
+    floor_thickness = 12
+    pygame.draw.circle(screen, 'black', centroid, radius + floor_thickness, floor_thickness)
     
     ## Draw warning track
     warning_track_thickness = 50
