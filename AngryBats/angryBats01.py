@@ -18,16 +18,16 @@ screen_h = 1350
 screen = pygame.display.set_mode((screen_w, screen_h))
 
 space = pymunk.Space()
-space.gravity = 0, -32.2/2.8088 # -100 # -5 # See below for why -5
-elasticity_ = .8
-
+elasticity_ = .6
+friction_ = 0.98
+space.gravity = 0, -91 # See below for why -91
 
 """ Setting the right gravity 
-- The screen is about 1330 pixels high = 3758' high
-- It should take 15.8s to hit the ground (Chat GPT, but sounds about right from skydiving...)
-- Well -5 got me 13.5s... it's blood slow... not sure it will feel realistic. 
-    I can cross-check with the math for cannonball arcs when i start launching balls
-
+- April 26: spent 10 min calibrating gravity. Key things:
+    - You must reset the ball's velocity to zero in Pymunk when you move it... else it keeps accelerating "in its mind" when you move it, distorting things
+    - I dropped it from 400', 300', 200', 100' over and over and compared against a table I made of pure physics times to drop from these heights
+    - The adjustment is non-linear due to acceleration. E.g., if I was 10% low I should adjust up by 15% or so. 
+    - I found -91 to get pretty close. I think I could refine another 2-3 integers (e.g., -89 might be even closer), but moving on for now
 """
 
 helper = Helpers(screen)
@@ -50,6 +50,8 @@ for FALSE_LOOP in range(1):
     of_width_x = 310 * pixels_per_foot
     inf_width_x = field_width_x - of_width_x
     of_wall_height_y = int(100 * pixels_per_foot)
+    
+    ball_launch_coord = ( wall_thickness + field_width_x - 9, screen_h - floor_thickness - (3 * pixels_per_foot) )
 
     ## Non-playing field
     launchZone_width_x = 400 
@@ -80,13 +82,13 @@ for FALSE_LOOP in range(1):
 
 ## Game toggles
 ball_clicked = False
+launch_ball = False
 
 ### MAIN FUNCTIONS
 def draw_background(screen_w, screen_h):
 
     ### Set up ###    
     top_of_floor = screen_h - (floor_thickness / 2 )
-        
         
     #### Playing field ###
 
@@ -95,12 +97,19 @@ def draw_background(screen_w, screen_h):
     start_coord_pg = (x, 0)
     end_coord_pg = (x, screen_h)
     pygame.draw.line(screen, dark_gray_c, start_coord_pg, end_coord_pg, wall_thickness)
+    
     # PYMUNK
-    # to do ... 
+    start_coord_pm = convert_coord( start_coord_pg )
+    end_coord_pm = convert_coord( end_coord_pg ) 
+    segment_body = pymunk.Body(body_type = pymunk.Body.STATIC)
+    segment_shape = pymunk.Segment(segment_body, start_coord_pm, end_coord_pm, 5)
+    segment_shape.elasticity = elasticity_ 
+    segment_shape.friction = friction_
+    space.add(segment_body, segment_shape)
     
     
     ## FLOOR: Draw a green OF ~ 420-120 ~ 300'
-    tilt = 35 # make the object angled to create a cool bounce ... for testing
+    tilt = 0 # make the object angled to create a cool bounce ... for testing
    
     start_coord_pg = (wall_thickness, top_of_floor - tilt)
     end_coord_pg = (wall_thickness + of_width_x, top_of_floor)
@@ -112,6 +121,7 @@ def draw_background(screen_w, screen_h):
     segment_body = pymunk.Body(body_type = pymunk.Body.STATIC)
     segment_shape = pymunk.Segment(segment_body, start_coord_pm, end_coord_pm, 5)
     segment_shape.elasticity = elasticity_ 
+    segment_shape.friction = friction_
     space.add(segment_body, segment_shape)
     
     
@@ -120,7 +130,14 @@ def draw_background(screen_w, screen_h):
     end_coord_pg = (wall_thickness + field_width_x, top_of_floor)
     pygame.draw.line(screen, inf_gray_c, start_coord_pg, end_coord_pg, floor_thickness)
     # PYMUNK
-    # to do ... 
+    
+    start_coord_pm = convert_coord( start_coord_pg )
+    end_coord_pm = convert_coord( end_coord_pg ) 
+    segment_body = pymunk.Body(body_type = pymunk.Body.STATIC)
+    segment_shape = pymunk.Segment(segment_body, start_coord_pm, end_coord_pm, 5)
+    segment_shape.elasticity = elasticity_ 
+    segment_shape.friction = friction_
+    space.add(segment_body, segment_shape)
        
     #### Non-playing field ###
     
@@ -160,7 +177,7 @@ def draw_background(screen_w, screen_h):
     pygame.draw.line(screen, med_gray_c, start_coord, end_coord, wall_thickness)
 
 
-def write_text_onScreen(body, ball_curr_velo_mph, ball_acceleration):
+def write_text_onScreen(body, ball_curr_velo_mph, ball_acceleration, ball_height_feet):
     text_x = text_interface_border_x + 50
     text_y = 400 
     
@@ -170,6 +187,9 @@ def write_text_onScreen(body, ball_curr_velo_mph, ball_acceleration):
     mouse_coord_text = "Mouse coord: ("   +   str(mouse_coord[0])   +   ", "   +   str(mouse_coord[1])   +   ")"
     pm_coord_text = "Pymunk coord: ("   +   str(int(pm_coord[0]))   +   ", "   +   str(int(pm_coord[1]))   +   ")"
     ball_clicked_text = "Ball clicked: " + str(ball_clicked)
+
+    ## Ball height in feet
+    ball_height_feet_text = "Ball height: " + str( int(ball_height_feet) )  + "'"
     
     ## Ball velo calculated manually from comparing feet moved per frame to frames-per-second 
     ball_clock_velo_text = "Ball velocity from game clock: " + str( int(ball_curr_velo_mph) )  + " mph"
@@ -181,18 +201,27 @@ def write_text_onScreen(body, ball_curr_velo_mph, ball_acceleration):
     ball_acceleration_text = "Ball acceleration from game clock: " + str( round(ball_acceleration, 2) ) + " mph^2"
     
                                               
-    instruction_text = [mouse_coord_text, pm_coord_text, ball_clicked_text, ball_clock_velo_text, ball_pm_velo_text, ball_acceleration_text]
+    instruction_text = [mouse_coord_text, pm_coord_text, ball_clicked_text, "", ball_height_feet_text, ball_clock_velo_text, ball_pm_velo_text, 
+                        ball_acceleration_text,
+                        ]
     
     helper.print_instruction_iterable(instruction_text, text_x, text_y)
     
     
-    
-
 def convert_coord(coord):
     return coord[0], screen_h - coord[1]
     ## It's the same formula for pg > pm and reverse. Assume y = 25 pixels from the bottom in pg
     # pm > pg  >  pg = 1000 - 25 = 975
     # pg > pm  >  pm = 1000 - 975 = 25
+    
+
+def get_height_ball(ball_coord_pg):
+    # y = 50  >  height = 1350-50 = 1300 - floor =  / conversion
+    
+    height_in_pixels = screen_h - floor_thickness - ball_coord_pg[1]
+    height_in_feet = height_in_pixels / pixels_per_foot
+    
+    return height_in_feet
     
     
 #Get mph for text display only 
@@ -218,14 +247,45 @@ def get_acceleration_ball(ball_prev_velo_mph, ball_curr_velo):
     return ball_acceleration
 
 
-##### *** PYMUNK *** #####
-body = pymunk.Body()
-body.position = convert_coord(ball_start_coord) #200, 400
-shape = pymunk.Circle(body, 10)
-shape.density = 1
-shape.elasticity = elasticity_     
-space.add(body, shape)
+def do_launch_ball(body, ball_launch_coord_pg):
+    ## Move ball to launch coord
+    launch_coord_pm = convert_coord( ball_launch_coord_pg )
+    body.position = launch_coord_pm
+    
+    launch_direction = (-500, 350)
+    
+    body.apply_impulse_at_local_point( launch_direction  ) 
+    
+    return body, False
 
+
+
+
+##### *** PYMUNK *** #####
+#https://readthedocs.org/projects/pymunk-tutorial/downloads/pdf/latest/
+
+mass, moment = 1, 10
+body = pymunk.Body(mass, moment)
+body.position = convert_coord(ball_start_coord) #200, 400
+circle = pymunk.Circle(body, ball_radius+1)
+#circle.density = 2 #.002
+circle.mass = 2
+circle.elasticity = elasticity_
+circle.friction = friction_
+space.add(body, circle)
+
+""" A note on friction
+Pymynk does not support "rolling" friction (because the underlying engine, Chipmunk does not support it). 
+Its quite complicated which its why its not supported.
+https://stackoverflow.com/questions/73004952/why-does-my-ball-not-stop-rolling-in-pymunk
+
+I kind of like Pymunk, but honestly it might be easier to hard-code everything to get more control over it. For rolling friction:
+- If it's right of the grass and height = ground, just have an x decay factor
+- A different factor if it's left of the grass line
+- And if it bounces on the ground it should also experience a small amount of x decay per bounce, with OF bounces higher decay than INF
+
+
+"""
 
 
 ##### ***** MAIN LOOP ***** #####
@@ -259,10 +319,10 @@ while not exit:
             
             ## Option selection keys
             if event.key == K_s:
-                gamePlay.update_situation_start(True)
+                pass 
          
             if event.key == K_SPACE:
-                gamePlay.advance_baserunner()
+                launch_ball = True
 
 
         ## Mouse button events
@@ -290,6 +350,15 @@ while not exit:
         mouse_coord_pm = convert_coord( (x, y) )
         
         body.position = mouse_coord_pm
+        
+        ## Reset the velocity of the object to zero when you move it (else it keeps thinking it's accelerating from gravity)
+        body.velocity = (0, 0) 
+    
+    if launch_ball:
+        #launch_direction = (80, 0)
+        #body.apply_impulse_at_local_point( launch_direction  )
+        #launch_ball = False
+        body, launch_ball = do_launch_ball(body, ball_launch_coord)
     
     ## Draw the ball controlled in Pymunk
     ball_coord_pg = convert_coord(body.position) ## Account for flipped y axis
@@ -298,6 +367,9 @@ while not exit:
     
     
     #### Capture metrics for reporting in the user interface ####
+    
+    ## Get ball height
+    ball_height_feet = get_height_ball(ball_coord_pg)
     
     ## Get ball velocity manually from distance travelled in PG coord over time  
     ball_curr_velo_mph, ball_prev_coord_pg = get_velo_ball(ball_coord_pg, ball_prev_coord_pg)
@@ -314,7 +386,7 @@ while not exit:
     
      
 
-    write_text_onScreen(body, ball_curr_velo_mph, ball_acceleration_mph)
+    write_text_onScreen(body, ball_curr_velo_mph, ball_acceleration_mph, ball_height_feet)
     
 
     pygame.display.update() 
