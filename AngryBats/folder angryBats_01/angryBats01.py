@@ -98,7 +98,7 @@ for FALSE_LOOP in range(1):
     ball_launched_toggle = False ## Space bar to launch
     ball_rolling_toggle = False
     pause_toggle = False
-
+-------------------------------------
 
 
 ### MAIN FUNCTIONS
