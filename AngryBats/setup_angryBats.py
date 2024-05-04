@@ -14,7 +14,7 @@ pygame.init()
 
 class Setup: 
     
-    def __init__(self, screen, w, h):
+    def __init__(self, screen, w, h):  
         self.screen = screen
         self.screen_w = w
         self.screen_h = h
@@ -24,7 +24,6 @@ class Setup:
         self.wall_thickness = 10    
         self.top_of_floor = self.screen_h - ( self.floor_thickness )
         self.floor_bisection = self.top_of_floor + (self.floor_thickness/2)
-        print(self.top_of_floor)
         
 
         ## Playing field
@@ -37,7 +36,7 @@ class Setup:
         self.launchZone_start_x = self.inf_start_x + self.inf_width_x
         self.text_display_start_x = self.launchZone_start_x + 400
         
-        ## Other key markers
+        ## Ball var
         self.ball_launch_y = self.top_of_floor - (4 * self.pixels_per_foot) ## 4' | This is also used to draw the launch nub
         
         ## Colours
