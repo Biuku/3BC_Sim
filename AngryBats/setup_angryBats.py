@@ -20,10 +20,10 @@ class Setup:
         self.screen_h = h
         self.pixels_per_foot = ( (355/127) + (362/127) ) / 2
         
-        self.floor_thickness = 17
-        self.wall_thickness = 10    
-        self.top_of_floor = self.screen_h - ( self.floor_thickness )
-        self.floor_bisection = self.top_of_floor + (self.floor_thickness/2)
+        self.floor_thickness = 17  ## MIGRATE, BUT CONSOLIDATE INTO A HARD-CODED 'TOP OF FLOOR' Y-VALUE
+        self.wall_thickness = 10   ## DO NOT MIGRATE -- BUT THE BALL NEEDS TO CHECK COLLISIONS 
+        self.top_of_floor = self.screen_h - ( self.floor_thickness )  # MIGRATED -- DONE 
+        self.floor_bisection = self.top_of_floor + (self.floor_thickness/2)  ## DO NOT MIGRATE
         
 
         ## Playing field
@@ -33,20 +33,20 @@ class Setup:
         
         ## Key x markers 
         self.inf_start_x = self.wall_thickness + self.of_width_x
-        self.launchZone_start_x = self.inf_start_x + self.inf_width_x
+        self.launchZone_start_x = self.inf_start_x + self.inf_width_x   # MIGRATED -- DONE 
         self.text_display_start_x = self.launchZone_start_x + 400
         
         ## Ball var
-        self.ball_launch_y = self.top_of_floor - (4 * self.pixels_per_foot) ## 4' | This is also used to draw the launch nub
+        self.ball_launch_z = self.top_of_floor - (4 * self.pixels_per_foot)  # MIGRATED -- DONE  ## 4' | This is also used to draw the launch nub 
         
         ## Colours
         self.extremely_light_gray = (240, 240, 240)
-        self.very_light_gray_c = (220, 220, 220)
-        self.inf_gray_c = (192, 192, 192)
-        self.med_gray_c = (128, 128, 128)
-        self.dark_gray_c = (47,47,47)
-        self.green_grass_c = (65,152,10)
-        self.extremely_light_blue_c = (225, 245, 245)
+        #self.very_light_gray_c = (220, 220, 220)
+        self.inf_gray_c = (192, 192, 192) # MIGRATED -- DONE 
+        self.med_gray_c = (128, 128, 128) # MIGRATED -- DONE
+        self.dark_gray_c = (47,47,47) # MIGRATED -- DONE
+        self.green_grass_c = (65,152,10) # MIGRATED -- DONE
+        self.extremely_light_blue_c = (225, 245, 245) # MIGRATED -- DONE
 
 
     def draw_playing_area(self):
@@ -84,7 +84,7 @@ class Setup:
         pygame.draw.line(self.screen, 'blue', start_coord, end_coord, self.floor_thickness)
         
         ## WALL: Draw launch 'nub' -- top is roughly point of contact on ball launches 
-        start_coord = (self.launchZone_start_x, self.ball_launch_y)
+        start_coord = (self.launchZone_start_x, self.ball_launch_z)
         end_coord = (self.launchZone_start_x, self.screen_h)
         pygame.draw.line(self.screen, 'blue', start_coord, end_coord, 5)
     

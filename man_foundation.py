@@ -67,13 +67,16 @@ class Man:
         self.fielder_curr_frame = next(self.fielder_frames_L)
         self.fielder_rect = self.fielder_curr_frame.get_rect()
         
-        
+        ## Control animation speed separate from game fps
+        self.prev_ticks = 0
+        self.animation_speed_ticks = 20 ## Number of ticks between animation frames 
+         
         #### MOTION AND POSITION  ####
         
         ### LOCOMOTION -- set up, including start position and speed of locomotion  
         # TEMPORARILY INCREASING RUNNING SPEED 67% TO "2" TO MAKE TESTING FASTER/EASIER
-        self.man_speed_x = 2 #4/3 # Optimal speed of NSEW locomotion = 4/3 -- pixels of movement per frame
-        self.man_speed_y = 2 #4/3
+        self.man_speed_x = .7 #4/3 # Optimal speed of NSEW locomotion = 4/3 -- pixels of movement per frame
+        self.man_speed_y = .7 #4/3
         self.man_diagonal_factor = 0.744 ## Diagonal motion is 1.35x faster than North-South or lateral motion -- this should equalize that.
         self.collision = False
         
@@ -176,16 +179,22 @@ class Man:
         self.fielder_rect.x = self.agnostic_pos[0]
         self.fielder_rect.y = self.agnostic_pos[1]
         
-        if self.moving:
         
-            if self.direction_facing == 1:
-                self.fielder_curr_frame = next(self.fielder_frames_L)
-
-            elif self.direction_facing == 2:
-                self.fielder_curr_frame = next(self.fielder_frames_R)
+        if self.moving:
             
-            elif self.direction_facing == 3:
-                self.fielder_curr_frame = next(self.fielder_frames_N)
+            ## Slow down the animation frame rate relative to overall fps
+            ticks = pygame.time.get_ticks()
+            if ticks - self.prev_ticks > self.animation_speed_ticks:
+                self.prev_ticks = ticks
+            
+                if self.direction_facing == 1:
+                    self.fielder_curr_frame = next(self.fielder_frames_L)
+
+                elif self.direction_facing == 2:
+                    self.fielder_curr_frame = next(self.fielder_frames_R)
+                
+                elif self.direction_facing == 3:
+                    self.fielder_curr_frame = next(self.fielder_frames_N)
                 
         self.screen.blit(self.fielder_curr_frame, self.fielder_rect)
         pygame.draw.rect(self.screen, self.rect_colour, self.fielder_rect, self.rect_thickness)
@@ -206,18 +215,23 @@ class Man:
         self.baserunner_rect.y = self.agnostic_pos[1]
         
         if self.moving:
+           
+            ## Slow down the animation frame rate relative to overall fps
+            ticks = pygame.time.get_ticks()
+            if ticks - self.prev_ticks > self.animation_speed_ticks:
+                self.prev_ticks = ticks
         
-            if self.direction_facing == 1:
-                self.baserunner_curr_frame = next(self.baserunner_frames_L)
+                if self.direction_facing == 1:
+                    self.baserunner_curr_frame = next(self.baserunner_frames_L)
 
-            elif self.direction_facing == 2:
-                self.baserunner_curr_frame = next(self.baserunner_frames_R)
-            
-            elif self.direction_facing == 3:
-                self.baserunner_curr_frame = next(self.baserunner_frames_N)
-            
-            else:
-                self.baserunner_curr_frame = next(self.baserunner_frames_L)
+                elif self.direction_facing == 2:
+                    self.baserunner_curr_frame = next(self.baserunner_frames_R)
+                
+                elif self.direction_facing == 3:
+                    self.baserunner_curr_frame = next(self.baserunner_frames_N)
+                
+                else:
+                    self.baserunner_curr_frame = next(self.baserunner_frames_L)
 
         self.screen.blit(self.baserunner_curr_frame, self.baserunner_rect)
         pygame.draw.rect(self.screen, self.rect_colour, self.baserunner_rect, self.rect_thickness)

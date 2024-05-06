@@ -14,23 +14,21 @@ class Shadow:
     def __init__(self, screen, w, h, radius):
         for _ in range(1):
             self.screen = screen
-
             self.setup = Setup(self.screen, w, h)
-            self.helpers = Helpers(self.screen)
 
             ## Constants
             self.thickness = 3
             self.y = self.setup.top_of_floor + self.thickness/2
             
-            self.min_width = int(radius * 1.6) ## Extra width so the shadow doesn't become miniscule
-            self.max_width = 200 ## Just guessed
+            self.min_width = int(radius * 1.3) ## Extra width so the shadow doesn't become miniscule
+            self.max_width = 100 ## Just guessed
             self.max_possible_height_feet = 200 ## 80 mph exit velo with 90 degree launch angle = 215' max height  
 
             # Colours
             self.zero_shadow_rgb = self.setup.green_grass_c  #[65, 150, 10]
             self.curr_rgb = tuple(self.zero_shadow_rgb)
             self.max_darkness_lowerbound_c = 0.10 # When very high up, stay 15% darker than the colour of grass
-            self.washout_upperbound_c = 0.9 # When on the ground, stay 20% away from total black when on the ground
+            self.washout_upperbound_c = 0.8 # When on the ground, stay 20% away from total black when on the ground
 
             #### Shadow coord and size ####
             ## Higher order var 

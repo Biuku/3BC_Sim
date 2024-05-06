@@ -14,10 +14,12 @@ from helpers import Helpers
 pygame.init()
 
 class Setup:
-    def __init__(self, screen):
+    def __init__(self, screen, w, h):
         
         self.screen = screen
-        self.helper = Helpers(screen)
+        self.helpers = Helpers(screen)        
+        self.screen_w = w
+        self.screen_h = h
         
         #Boundary coord
         self.x_centre_line = 950
@@ -26,6 +28,8 @@ class Setup:
         self.rf_foulPole = (1839, 355) #(1780, 410)
         self.four_B_tip = (self.x_centre_line, 1245)
         self.main_centroid = (950, 1430) # This is the centre of the circle describing the OF wall / warning track (Not useful for foul lines)
+        self.main_centroid_radius = self.helpers.measure_distance_in_pixels(self.main_centroid, self.cf_wall)
+        
 
         # Boundary thetas -- from Home in degrees
         self.lf_foulPole_deg = 135
@@ -40,7 +44,7 @@ class Setup:
         self.CF = (self.x_centre_line, 350)
         self.RF = (1350, self.mid_depth_OF)
         
-        ## IN coordinates
+        ## INF coordinates
         self.y_infield_middle_line = 1055
         self.base_size = 10  ## 10 this is much smaller than diamond.png shows the bases, but converts to 3.6' square
         self.base_centroids = self.get_base_centroids()
@@ -53,6 +57,19 @@ class Setup:
         self.font12 = pygame.font.SysFont('Arial', 12) 
         self.font15 = pygame.font.SysFont('Arial', 15) #pygame.font.Font('freesansbold.ttf', 15)
         self.font20 = pygame.font.SysFont('Arial', 18)
+
+        """ ********* VARIABLES USED BY ANGRY BATS ********* """
+
+        """ COLOURS FROM ANGRY BATS """
+        self.extremely_light_gray = (240, 240, 240)
+        self.med_gray_c = (128, 128, 128)
+        self.dark_gray_c = (47,47,47)
+        self.green_grass_c = (65,152,10)
+        self.extremely_light_blue_c = (225, 245, 245) 
+        
+        """ OTHER ANGRY BATS VARIABLES """
+        self.top_of_floor = 1350 - 17
+        self.ball_launch_z = self.top_of_floor - (4 * self.pixels_per_foot) ## 4'
 
         
     ## Hard coded coordinates for the OF corners, CF wall, and tip of home plate
@@ -116,29 +133,17 @@ class Setup:
     
    
     def get_fielder_standard_coord(self, base_centroids):
-
-        ## Get pos for INF f3 - f6 
-        # Baseball strategies, ABA, p.229 --> NW, NE | E.g., F3: 9 over, 12 back from 1B --> (9, 12)
-        inf_steps_adjust = {3: [(9, 12), "one_B" ],
-                            4: [(-5, 12), "two_B"],
-                            5: [(12, 7), "three_B"], 
-                            6: [(15, -7), "two_B"], 
-                            }
-
         fielder_standard_coord = {}
-        
-        for key, value in inf_steps_adjust.items():
-            steps = value[0]            
-            base_id = value[1]    
-            
-            old_coord = base_centroids[base_id]
-            new_coord = self.helper.convert_steps_to_pos(old_coord, steps) 
-            
-            fielder_standard_coord[key] = new_coord
 
+        ## Coord for INF
+        fielder_standard_coord[3] = (1144, 950) #fielder ID: 3  |  new_coord: (1144, 950)
+        fielder_standard_coord[4] = (1034, 845) #fielder ID: 4  |  new_coord: (1034, 845)
+        fielder_standard_coord[5] = (743, 960)  #fielder ID: 5  |  new_coord: (743, 960)
+        fielder_standard_coord[6] = (840, 840)  #fielder ID: 6  |  new_coord: (840, 840)
+        
         ## Get coord for f1, f2
         fielder_standard_coord[1] = base_centroids['rubber_P']
-        fielder_standard_coord[2] = base_centroids['four_B']
+        fielder_standard_coord[2] = base_centroids['four_B'][0], base_centroids['four_B'][1]+40
         
         ## Get coord for OF
         fielder_standard_coord[7] = self.LF
@@ -146,8 +151,8 @@ class Setup:
         fielder_standard_coord[9] = self.RF
         
         return fielder_standard_coord
-  
     
+
     ## Create 9 instances of 'Man' object and return in a dict -- 1 to 9 
     def make_fielders(self, fielder_standard_coord, screen):
 
@@ -159,18 +164,10 @@ class Setup:
             
         return fielder_objects
     
-      
     
     def make_baserunners(self, screen):
         return Baserunner(screen, self.base_centroids)
     
-        """
-        baserunner_objects = []
-        
-        for i in range(5):
-            baserunner_objects.append( Baserunner(screen, self.base_centroids) )
-        """
-
     
     def get_defensiveSit_fielder_coord(self, base_centroids):
         sprite_size = 32 - 13 # Playing with numbers to get the fielder very close to where he needs to be 
@@ -181,8 +178,7 @@ class Setup:
         rubber = base_centroids['rubber_P']
 
         # 100   | 1 backs up 2B
-        steps = ( 12, 4 ) #NW, NE
-        _100 = self.helper.convert_steps_to_pos(rubber, steps)   #(B2[0] -30, B2[1] + 55)
+        _100 = (B2[0] -40, B2[1] + 90)
 
         # 101      | Catcher trails the runner to 1B 
         _101 = (B1[0] + 25, B1[1] + 45)
@@ -191,8 +187,7 @@ class Setup:
         _102 = (B1[0] - (17 + sprite_size), B1[1] - sprite_size)
         
         # 103   | 4 cutoff to 2B 
-        steps = (-1, 40) #NW, NE
-        _103 = self.helper.convert_steps_to_pos(B2, steps) 
+        _103 = (B2[0] + 200, B2[1] - 200)
         
         # 104   | 5 covers 3B
         _104 = (B3[0] , B3[1] - sprite_size)
@@ -201,9 +196,8 @@ class Setup:
         _105= (B2[0] + (17 - sprite_size + 10), B2[1] - sprite_size)
         
         # 106   | 7 backs up 2B from RF throw
-        steps = (20, -15)  #NW, NE
-        _106 = self.helper.convert_steps_to_pos(B2, steps)
-        
+        _106 = (B2[0] - 180, B2[1] - 30)
+
         # 107    | cover_4_2B
         _107 = _105
         
@@ -258,20 +252,29 @@ class Setup:
             - I will ultimately encode each defensive play, picking from this menu of actions 
         
         """ 
-        
-        defensiveSit_fielder_coord = {    
-                        100: _100, 101: _101, 102: _102, 103: _103, 104: _104, 105: _105, 106: _106,
-                        107: _107, 108: _108, 109: _109, 110: _110, 111: _111, 112: _112, 113: _113,
-                        114: _114, 115: _115, 116: _116, 117: _117, 119: _118, 119: _119, 120: _120,
-                        121: _121             
-                        }
 
+        defensiveSit_fielder_coord = {    
+                100: _100, 101: _101, 102: _102, 103: _103, 104: _104, 105: _105, 106: _106,
+                107: _107, 108: _108, 109: _109, 110: _110, 111: _111, 112: _112, 113: _113,
+                114: _114, 115: _115, 116: _116, 117: _117, 119: _118, 119: _119, 120: _120,
+                121: _121             
+                }
+
+        """
+        defensiveSit_fielder_coord = {    
+                        100: _100,
+                        1000: _1000,
+                        103: _103,
+                        1003: _1003,                         
+                        106: _106,
+                        1006: _1006,
+                        }
+        """
         return defensiveSit_fielder_coord
 
-   
-    def get_defensiveSit_plays(self, defensiveSit_fielder_coord):
+
+    def get_defensiveSit_plays(self):
        
-        ## defensiveSit_fielder_coord is the dict with all coordinates for defensive actions numbered as keys from 100 - ???
         # Below, each defensive play is a key, and the list of 0-9 provides plays for all defensive players
         # 1 = field the ball
         # 2 = back up the guy fielding the ball
@@ -287,7 +290,5 @@ class Setup:
                             10: ["R2, single to CF", 116, 111, 117, 107, 104, 113, 2, 1, 2],
                             11: ["R2, single to RF", 116, 111, 118, 112, 104, 105, 121, 2, 1],           
         }
-       
-        defensiveSit_plays_index = {}
-       
+              
         return defensiveSit_plays

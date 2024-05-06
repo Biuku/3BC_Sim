@@ -40,6 +40,8 @@ mouse_drag_ball_toggle = False
 pause_toggle = False
 
 
+mouse_scroll_value = 100
+
 ### MAIN FUNCTIONS
 def draw_background():
     screen.fill('white')
@@ -55,8 +57,9 @@ def write_text_onScreen():
     ## Send to screen
 
     #screenPrinter.print_coord( ["Mouse coord", pygame.mouse.get_pos(), ""] )
-    screenPrinter.print_simple( ["Exit velo", ball.launch_velo_mph, ""] )
-    screenPrinter.print_simple( ["Launch angle", ball.launch_angle_leftward, ""] )
+    screenPrinter.print_simple( ["Exit velo", ball.launch_velo_mph, " mph"] )
+    screenPrinter.print_simple( ["Launch angle", ball.launch_angle_leftward, "°"] )
+    screenPrinter.print_simple( ["Mouse scroll-wheel tracer", mouse_scroll_value, ""] )
     screenPrinter.paragraph_break()
         
     #screenPrinter.print_simple( ["Ball launched", ball.launched_toggle, ""] )
@@ -75,8 +78,8 @@ def write_text_onScreen():
     #screenPrinter.print_rounded( ["Velocity Y", ball.velocity_y_pg, " pixels per frame"], 1 )
     screenPrinter.paragraph_break()
     
-    screenPrinter.print_rounded( ["Total flight/air time", ball.flight_duration_s, " seconds"], 1 )
-    screenPrinter.print_rounded( ["Total time till end", ball.total_duration_s, " seconds"], 1 )
+    screenPrinter.print_rounded( ["Total time", ball.total_duration_s, " seconds"], 1 )
+    screenPrinter.print_rounded( ["Air time", ball.flight_duration_s, " seconds"], 1 )
     screenPrinter.print_int( ["# bounces", ball.bounce_count, ""])
     #screenPrinter.print_rounded( ["Time since bounce", ball.bounce_duration_s, " seconds"], 1 )
     #screenPrinter.print_rounded( ["Duration of rolling", ball.rolling_duration_s, " seconds"], 1 )
@@ -116,7 +119,7 @@ while not exit:
                 pause_toggle = not(pause_toggle) 
 
             if event.key == K_SPACE:
-                ball.launch_ball()
+                ball.launch_ball() # MIGRATED -- DONE
             
             if event.key == K_LEFT:
                 ball.launch_velo_mph -= 5
@@ -130,28 +133,32 @@ while not exit:
             if event.key == K_DOWN:
                 ball.launch_angle_leftward -= 2
                 
-            
                 
         ## Mouse button events
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1: # Left click
                 mouse_drag_ball_toggle = True
                 
-
+            if event.button == 4: # Scroll wheel up
+                mouse_scroll_value += 2
+                
+            elif event.button == 5: # Scroll wheel up
+                mouse_scroll_value -= 2
+                
         if event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1: # Left click
                 mouse_drag_ball_toggle = False
 
 
     #### Main actions ####  
-
+    
     if not(pause_toggle):
        
         ### User actions
-        do_mouse_drag_ball()
+        do_mouse_drag_ball() # MIGRATED -- DONE
 
         ## Move launched ball | Ball launched after hitting <space>
-        ball.move_ball()
+        ball.move_ball() # MIGRATED -- DONE
     
     ball.draw_ball()
     write_text_onScreen()

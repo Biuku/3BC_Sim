@@ -21,7 +21,6 @@ class Helpers:
 
 
     def measure_distance_in_pixels(self, start_pos, end_pos):
-        
         ## Convert two sets of coordinates to a linear distance using trigonometry
         distance_in_pixels = math.sqrt( ( end_pos[0] - start_pos[0] )**2  +  ( end_pos[1] - start_pos[1] )**2 )
         
@@ -56,23 +55,19 @@ class Helpers:
         
         return theta_rad
     
-
+    """ MIGRATED TO LEGACY HELPERS """
     def get_total_time_seconds(self, start_time_ms):
         
         current_time = pygame.time.get_ticks()
         total_time_seconds = (current_time - start_time_ms) / 1000
         
         return total_time_seconds
+    """ ^^^ MIGRATED TO LEGACY HELPERS ^^^ """
 
-
-    def get_gravity_delta_y(self, gravity, total_time_seconds):
-        delta_y = (0.5) * gravity * (total_time_seconds**2)
-        return delta_y
 
 
 
 """" *** SCREEN PRINTER CLASS *** """
-
 
 
 class ScreenPrinter: 
@@ -138,8 +133,6 @@ class ScreenPrinter:
         self.print_simple(text)
         
 
-    
-    ## Called by gamePlay
     def print_instruction_iterable(self, instruction_text, x, y):
         
         for text in instruction_text:

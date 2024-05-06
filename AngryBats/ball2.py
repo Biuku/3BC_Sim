@@ -1,3 +1,6 @@
+""" MAY 4 -- Updating to rename 'y' as 'z' prior to integrating into top-down legacy program """
+
+
 import pygame
 from pygame.locals import *
 import math
@@ -21,15 +24,15 @@ class Ball:
             self.helpers = Helpers(self.screen)
             
             ## Ball constants
-            self.ball_radius = 5
+            self.ball_radius = 6
             self.ball_edge_thickness = 2
             self.shadow = Shadow(self.screen, w, h, self.ball_radius)
             
             ## Ball control -- coord and speed
-            self.master_coord = (self.setup.launchZone_start_x - 100, self.setup.top_of_floor - self.ball_radius) #(200, self.setup.screen_h - 200) 
+            self.master_coord = (self.setup.launchZone_start_x - 100, self.setup.top_of_floor - self.ball_radius)  
             self.prev_coord = self.master_coord #For measuring ball velo 
             self.velocity_x_pg = 0
-            self.velocity_y_pg = 0
+            self.velocity_z_pg = 0
         
             ## Functional kinetic variables
             self.curr_height_feet = 0
@@ -38,8 +41,8 @@ class Ball:
             
             ## Ball launch 
             self.launched_toggle = False
-            self.launch_start_coord = ( self.setup.launchZone_start_x,  self.setup.ball_launch_y) ## Update for thrown balls
-            self.launch_vector_y = 0
+            self.launch_start_coord = ( self.setup.launchZone_start_x,  self.setup.ball_launch_z) ## Update for thrown balls
+            #self.launch_vector_y = 0
             self.launch_vector_x = 0
             
             ## Tracers to calibrate gravity, mph conversion, friction lossy, etc.
@@ -59,13 +62,13 @@ class Ball:
 
         # Bounce
         self.bounce_toggle = False
-        self.bounce_lossy_y = 0.4 ## 35% = 65% loss per bounce
+        self.bounce_lossy_z = 0.4 ## 35% = 65% loss per bounce
         self.bounce_lossy_x = 0.8 ## 80% = 20% loss per bounce
         self.bounce_count = 0
 
         ### Rolling        
         self.rolling_toggle = False
-        self.jitter = 1 # Number of y pixels the ball hops (randomly) when rolling  
+        self.jitter = 1 # Number of z pixels the ball hops (randomly) when rolling  
         self.rolling_lossy_x = 4 / 1000 # 7
         self.speed_stop_rolling_pg = 5 / 1000 # 0.01  # Speed in pg
 
@@ -83,10 +86,14 @@ class Ball:
         self.rolling_toggle = False
         self.bounce_toggle = False
         
+        self.bounce_count = 0
+        self.flight_duration_s = 0
+        self.max_height_feet = 0
+        
         self.master_coord = self.launch_start_coord
         self.launch_start_ms = pygame.time.get_ticks()
         
-        self.velocity_y_pg  = -1 * (math.sin(self.launch_angle_rad) * self.launch_velo_pg)
+        self.velocity_z_pg  = -1 * (math.sin(self.launch_angle_rad) * self.launch_velo_pg)
         self.velocity_x_pg  = math.cos(self.launch_angle_rad) * self.launch_velo_pg
 
     ### 1. Primary movement functions 
@@ -102,11 +109,11 @@ class Ball:
         
             ## Calculate new coord
             new_x = self.move_ball_in_x()
-            new_y = self.move_ball_in_y()
+            new_z = self.move_ball_in_z()
             
             ## Track prev coord to derive total velocity in MPH (vs last frame)    
             self.prev_coord = self.master_coord       
-            self.master_coord = (new_x, new_y)
+            self.master_coord = (new_x, new_z)
 
         self.update_deltas()
         self.check_collisions() 
@@ -122,7 +129,7 @@ class Ball:
         return self.master_coord[0] + self.velocity_x_pg
 
 
-    def move_ball_in_y(self):
+    def move_ball_in_z(self):
         
         # Only incorporate launch velo and gravity if the ball is not rolling
         
@@ -132,16 +139,15 @@ class Ball:
             if not(self.bounce_toggle):
                 
                 ## Pre-bounce / first flight
-                self.velocity_y_pg += self.gravity
-                #return self.master_coord[1] + self.velocity_y_pg
+                self.velocity_z_pg += self.gravity
             
             elif self.bounce_toggle:
                 ## snap the ball to the ground so it doesn't appear to hover (ground proximity is necessary to determine it's above 'rolling')
                 # This makes the transition from the last bounces to rolling appear more natural
-                new_y = self.master_coord[1] + self.ground_proximity_threshold
-                self.master_coord = (self.master_coord[0], new_y)
+                new_z = self.master_coord[1] + self.ground_proximity_threshold
+                self.master_coord = (self.master_coord[0], new_z)
                 
-                self.velocity_y_pg *= -1 * self.bounce_lossy_y # Bounce = change direction, lose some y velocity  
+                self.velocity_z_pg *= -1 * self.bounce_lossy_z # Bounce = change direction, lose some z velocity  
                 self.velocity_x_pg *= self.bounce_lossy_x # A one-time x speed reduction at the moment of impact 
                 self.bounce_toggle = False
         
@@ -150,7 +156,7 @@ class Ball:
             if self.curr_velo_mph > 15:
                 jitter_y = random.randrange(-self.jitter, self.jitter)
             
-        return self.master_coord[1] + self.velocity_y_pg + jitter_y
+        return self.master_coord[1] + self.velocity_z_pg + jitter_y
     
      
     ### 2. Supporting movement functions         
@@ -159,7 +165,7 @@ class Ball:
         if self.master_coord[1] > self.ground_proximity:
 
             # Coming in hot = bounce
-            if self.velocity_y_pg > 0.2:
+            if self.velocity_z_pg > 0.2:
                 
                 ## On first bounce, capture flight duration for tracer
                 if self.bounce_toggle == False:
@@ -169,10 +175,10 @@ class Ball:
                 self.bounce_count += 1
 
             ## Else, it's coming down slow = rolling
-            elif self.velocity_y_pg >= 0:
+            elif self.velocity_z_pg >= 0:
                 self.rolling_toggle = True
                 self.bounce_toggle = False
-                self.velocity_y_pg = 0
+                self.velocity_z_pg = 0
                 self.master_coord = (self.master_coord[0], self.ball_y_on_the_ground) # Snap to the ground
                     
 
@@ -190,7 +196,7 @@ class Ball:
         #self.master_coord = (self.master_coord[0], self.ball_y_on_the_ground)
         
         self.velocity_x_pg = 0
-        self.velocity_y_pg = 0
+        self.velocity_z_pg = 0
 
 
     def update_deltas(self):
@@ -209,14 +215,14 @@ class Ball:
         
     ### Keep ball in-bounds, and draw ball 
     def check_collisions(self):
-        x, y = self.master_coord
+        x, z = self.master_coord
         
         x = min(x, (self.setup.launchZone_start_x ) ) # Right edge
         x = max(x, self.setup.wall_thickness + self.ball_radius) # Left edge
-        y = min(y, self.ball_y_on_the_ground) # bottom
-        y = max(y, self.setup.wall_thickness//2 + self.ball_radius + 1) # Top
+        z = min(z, self.ball_y_on_the_ground) # bottom
+        z = max(z, self.setup.wall_thickness//2 + self.ball_radius + 1) # Top
         
-        self.master_coord = (x, y)
+        self.master_coord = (x, z)
 
 
     def draw_ball(self):
@@ -239,6 +245,7 @@ class Ball:
 
     ### 4. Updates and gets
     def mouse_drag_ball(self):
+        self.prev_coord = self.master_coord
         self.master_coord = pygame.mouse.get_pos()
         self.launched_toggle = False
         self.rolling_toggle = False
@@ -246,8 +253,8 @@ class Ball:
     def update_height_feet(self):
         
         ## Patch a bug where the height increases below the floor... don't know why
-        end_y = min(self.setup.top_of_floor, self.master_coord[1])
-        end_coord = (self.master_coord[0], end_y)
+        end_z = min(self.setup.top_of_floor, self.master_coord[1])
+        end_coord = (self.master_coord[0], end_z)
         
         start_coord = (self.master_coord[0], self.setup.top_of_floor)
         self.curr_height_feet = self.helpers.measure_distance_in_feet(start_coord, end_coord) 

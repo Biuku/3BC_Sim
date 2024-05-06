@@ -17,29 +17,31 @@ os.environ['SDL_VIDEO_WINDOW_POS'] = "%d, %d" %(1, 30) # Opens Pygame to top-lef
 
 pygame.init()
 w = 2500 #3400 #= optimal for my widescreen
+user_interface_start_x = w - 500
 h = 1350
+fps = 90
 screen = pygame.display.set_mode((w, h))
-setup = Setup(screen)
-helper = Helpers(screen)
-gamePlay = GamePlay(screen)
+setup = Setup(screen, w, h)
+helpers = Helpers(screen)
+gamePlay = GamePlay(screen, w, h, fps, user_interface_start_x) 
 
 # Game clock 
 clock = pygame.time.Clock()
-fps = 45
+
 
 # Graphics setup
 diamond = pygame.image.load("images/diamond_1.png")
 
 ## Game toggles
 left = right = north = south = False
-baserunner_advance = False
-situation_start = False
+pause_toggle = False
+
 
 # Meta / development toggles
 show_boundary_markers = False
 show_defensiveSit_coord = False
 measuring_tape = False
-moving_ball = False
+mouse_drag_ball_toggle = False
 
 
 ##### Import key data to run the meta functions (can be discarded when final) #####
@@ -86,13 +88,13 @@ def draw_defensiveSit_id():
         text = "#" + str(defensiveSit_id)
         
         # string_, colour, coord, font, justification: 1 = topleft 2 = center
-        helper.draw_text(text, 'gray', defensive_sit_coord, setup.font12, 2)
+        helpers.draw_text(text, 'gray', defensive_sit_coord, setup.font12, 2)
         
 
 def draw_OF_wall():
-    """ I have an image rn as the OF, but it's got some symmetry challenges. Want to replace with clearly defined coordinates. """
-    centroid = boundary_coords['main_centroid'] 
-    radius = helper.measure_distance_in_pixels(boundary_coords['main_centroid'], boundary_coords['cf_wall'])
+
+    centroid = boundary_coords['main_centroid'] ## The centre of a circle that includes the OF wall arc. This point is off-screen, South
+    radius = setup.main_centroid_radius #helpers.measure_distance_in_pixels(boundary_coords['main_centroid'], boundary_coords['cf_wall'])
     
     #### 1. First, I need to hide a bunch of things from the png that are screwy because it is not symmetrical ####
     
@@ -108,9 +110,9 @@ def draw_OF_wall():
 
     #### 2. Second, draw the perfectly symmetrical black wall and grey warning track
     
-    ## Draw wall -- the true edge of the wall is the radius, but have to start drawing past it and inwards by its thickness 
-    floor_thickness = 12
-    pygame.draw.circle(screen, 'black', centroid, radius + floor_thickness, floor_thickness)
+    ## Draw OF wall -- the true edge of the wall is the radius, but have to start drawing past it and inwards by its thickness 
+    wall_thickness = 12
+    pygame.draw.circle(screen, 'black', centroid, radius + wall_thickness, wall_thickness)
     
     ## Draw warning track
     warning_track_thickness = 50
@@ -140,10 +142,10 @@ def draw_foul_lines():
 def draw_arrondissements():
     
     centroid = boundary_coords['four_B_tip']
-    dist_pixels = helper.measure_distance_in_pixels(centroid, boundary_coords['cf_wall']) 
+    dist_pixels = helpers.measure_distance_in_pixels(centroid, boundary_coords['cf_wall']) 
     
-    CF_left_end = helper.theta_to_endCoord(centroid, boundary_thetas['cf_left_deg'], dist_pixels)
-    CF_right_end = helper.theta_to_endCoord(centroid, boundary_thetas['cf_right_deg'], dist_pixels)
+    CF_left_end = helpers.theta_to_endCoord(centroid, boundary_thetas['cf_left_deg'], dist_pixels)
+    CF_right_end = helpers.theta_to_endCoord(centroid, boundary_thetas['cf_right_deg'], dist_pixels)
     
     pygame.draw.line(screen, 'blue', centroid, CF_left_end, 2)
     pygame.draw.line(screen, 'blue', centroid, CF_right_end, 2)
@@ -156,10 +158,10 @@ def interpret_ball_location():
     centroid = boundary_coords['four_B_tip'] 
     
     # Get theta of ball
-    ball_theta_rad = helper.coord_to_theta(centroid, ball_coord)
+    ball_theta_rad = helpers.coord_to_theta(centroid, ball_coord)
     ball_theta_deg = math.degrees(ball_theta_rad)
     
-    # if theta is... # boundary_thetas: lf_foulPole_deg, cf_deg, rf_foulPole_deg, cf_left_deg, cf_right_deg 
+    # if theta is... 
     ball_loc = None
     
     if ball_theta_deg > boundary_thetas['lf_foulPole_deg']:
@@ -176,55 +178,46 @@ def interpret_ball_location():
         
     else:
         ball_loc = "Foul: right side"
-        
-    gamePlay.print_ball_loc(ball_loc)
+
+    gamePlay.update_ball_situational_location(ball_loc)
 
     
 ## Measure the distance from Home in feet 
 def draw_measuring_tape():
-    
-    """ Arc describes OF wall """
-    #centroid = boundary_coords['main_centroid'] #centroid = (950, 1430)
-    #dist_pixels = helper.measure_distance_in_pixels(centroid, boundary_coords['cf_wall']) # 1406 # dist_feet = 475
-    
+        
     """ Arc from Home """
     centroid = boundary_coords['four_B_tip']    
                    
     Q = pygame.mouse.get_pos()
     RC = (Q[0], centroid[1]) # Note, centroid is off screen (below)
     
-    ## Draw triangle from centroid to mouse_pos
-    #pygame.draw.polygon(screen, 'grey', (centroid, Q, RC) )
-    
     # Get theta
-    theta_rad = helper.coord_to_theta(centroid, Q)
+    theta_rad = helpers.coord_to_theta(centroid, Q)
 
     """ For arc describing OF wall """     
-    ### Given theta and length of measuring tape, get end coord
-    #theta_deg = math.degrees(theta_rad)
-    #end_coord = helper.theta_to_endCoord(centroid, theta_deg, dist_pixels)
-
     end_coord = Q
     start_coord = centroid
 
     ## Set up on-screen coordinates
-    coord_str = "(" + str( int(end_coord[0]) ) + ", " + str( int(end_coord[1]) ) + ")"
-    
-    distance_in_feet = helper.measure_distance_in_feet(start_coord, end_coord)
-    distance_str = str( int(distance_in_feet) ) + "'" 
-    
-    theta_str = str( int(math.degrees(theta_rad)) ) + "\u00b0"
-    
-    texts = [coord_str, distance_str, theta_str]
+    for text_coord in range(1):
+        coord_str = "(" + str( int(end_coord[0]) ) + ", " + str( int(end_coord[1]) ) + ")"
+        
+        distance_in_feet = helpers.measure_distance_in_feet(start_coord, end_coord)
+        distance_str = str( int(distance_in_feet) ) + "'" 
+        
+        theta_str = str( int(math.degrees(theta_rad)) ) + "\u00b0"
+        
+        texts = [coord_str, distance_str, theta_str]
 
-    ## Draw     
-    x = end_coord[0]+20
+        ## Draw     
+        x = end_coord[0]+20
 
-    for i, text in enumerate(texts):
-        y = end_coord[1] - 10 + (20 * i)
-        helper.draw_text(text, 'black', (x, y), setup.font15, 1)
+        for i, text in enumerate(texts):
+            y = end_coord[1] - 10 + (20 * i)
+            helpers.draw_text(text, 'black', (x, y), setup.font15, 1)
         
     pygame.draw.line(screen, 'red', start_coord, end_coord, 4)
+
 
 
 ##### ***** MAIN LOOP ***** #####
@@ -280,6 +273,27 @@ while not exit:
             if event.key == K_KP1:
                 south = True
                 left = True
+                
+            ## Modify launch velo and angle 
+            if event.key == K_w:
+                gamePlay.launch_angle_increment = True
+
+            if event.key == K_s:
+                gamePlay.launch_angle_decrement = True
+
+            if event.key == K_d:
+                gamePlay.launch_velo_increment = True
+
+            if event.key == K_a:
+                gamePlay.launch_velo_decrement = True
+
+            if event.key == K_x:
+                gamePlay.launch_direction_decrement = True
+
+            if event.key == K_z:
+                gamePlay.launch_direction_increment = True
+
+
             
             ### Set up stuff 
             
@@ -290,87 +304,67 @@ while not exit:
                     
             ## Reset situations
             if event.key == K_c:
-                gamePlay.reset_numkeys()       
                 gamePlay.update_curr_defensiveSit(0)
-                gamePlay.reset_fielders() ## send fielders back to their start positions
+                gamePlay.reset_play()
             
-            if event.key == K_s:
+            if event.key == K_y:
                 gamePlay.update_situation_start(True)
          
             if event.key == K_b:
                 show_boundary_markers = not(show_boundary_markers)
                 
-            if event.key == K_d:
+            if event.key == K_t:
                 show_defensiveSit_coord = not(show_defensiveSit_coord)
                 
             if event.key == K_m:
                 measuring_tape = not(measuring_tape)
             
             if event.key == K_SPACE:
+                gamePlay.launch_ball()
+                
+            if event.key == K_r:
                 gamePlay.advance_baserunner()
-
-            ## Temp -- something got unstable and I need to be able to stop the baserunner from moving 
-            if event.key == K_q:
-                gamePlay.remove_baserunner_goal()
+                
+            if event.key == K_p:
+                pause_toggle = not(pause_toggle)
                 
             
             # End set up stuff
 
-
         if event.type == KEYUP:
-            if event.key == K_LEFT or event.key == K_KP4:
-                left = False   
-        
-            if event.key == K_RIGHT or event.key == K_KP6:
-                right = False
-                
-            if event.key == K_UP or event.key == K_KP8:
-                north = False
+            left = right = north = south = False
+            gamePlay.launch_velo_decrement = False
+            gamePlay.launch_velo_increment = False
+            gamePlay.launch_angle_decrement = False
+            gamePlay.launch_angle_increment = False
+            gamePlay.launch_direction_increment = False
+            gamePlay.launch_direction_decrement = False
             
-            if event.key == K_DOWN or event.key == K_KP2:
-                south = False
-                
-            if event.key == K_KP7:
-                north = False
-                left = False      
-                
-            if event.key == K_KP9:
-                north = False
-                right = False
-                                 
-            if event.key == K_KP3:
-                south = False
-                right = False   
-                                 
-            if event.key == K_KP1:
-                south = False
-                left = False
-            
-            ### Set up stuff 
-            #if event.key == K_SPACE:
-            #    gamePlay.update_baserunner_advance(False)
-        
         ## Mouse button events
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1: # left click
-                moving_ball = True
+                mouse_drag_ball_toggle = True
+                
+                
+            ## Manually update the height using the scroll wheel
+            if event.button == 4: # Scroll wheel up
+                gamePlay.update_ball_height(5)
+                
+            elif event.button == 5: # Scroll wheel up
+                gamePlay.update_ball_height(-5)
             
-            elif event.button == 3: # Right click
-                pass
-            
+        
         if event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1: # Left click
-                moving_ball = False
+                mouse_drag_ball_toggle = False
             
-            elif event.button == 3: # Right click
-                pass
             
-    
     #### Main actions ####
             
     ## Draw the artificial diamond -- to replace parts of diamond.png
     draw_OF_wall()
     draw_foul_lines()
+    gamePlay.write_text_onScreen()
     
     ## Display markers / anchor points
     if show_boundary_markers:
@@ -383,21 +377,21 @@ while not exit:
     if measuring_tape:
         draw_measuring_tape()
         
-    for fake_loop in range(1): 
-        ## Update baseball plays 
-        gamePlay.print_instructions()
+
+    gamePlay.update_launch_properties()
+
+    if not(pause_toggle):
         gamePlay.choose_situation()
         gamePlay.do_situation()
         
         ## Update and draw fielders and baserunners
         gamePlay.move_fielders(left, right, north, south)
         gamePlay.move_baserunners(left, right, north, south)
-        gamePlay.move_ball(moving_ball)
-        
         
         interpret_ball_location()
 
-        gamePlay.reset_instructionCoord()
+    gamePlay.draw_players()
+    gamePlay.move_ball(mouse_drag_ball_toggle)
     
 
     pygame.display.update() 
