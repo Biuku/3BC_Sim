@@ -11,8 +11,6 @@ from ball2 import Ball
 from helpers import Helpers
 from helpers import ScreenPrinter
 
-##### ***** INITIALIZE PYGAME ***** #####
-
 pygame.init()
 
 
@@ -21,7 +19,6 @@ class GamePlay:
     def __init__(self, screen, w, h, fps, user_interface_start_x):
         
         self.screen = screen
-
         self.setup = Setup(screen, w, h)
         self.ball = Ball(screen, w, h, fps, user_interface_start_x)
         self.helper = Helpers(screen)
@@ -53,6 +50,9 @@ class GamePlay:
             self.base_attained_text = ""
             self.ball_location_text = ""
             self.num_keys = [False] * 10 ## Keep track of multiple num keys pressed above the kb
+            
+            # Toggles
+            self.situation_start = False
         
         for ball_related in range(1):
             self.launch_velo_increment = False
@@ -63,13 +63,8 @@ class GamePlay:
             self.launch_direction_decrement = False
             self.prev_ticks = 0
             
-        #Toggles
-        self.situation_start = False
-        
-        ## On-screen instructions
-        self.instructions_x = self.instructions_master_x = 1400
-        self.instructions_y = self.instructions_master_y = 850
-
+            self.fielder_with_ball = None
+            
 
     ### Game situation function
     def do_situation(self): #curr_defensiveSit, defensiveSit_plays, defensiveSit_fielder_coord, situation_start, ball_coord        
@@ -81,8 +76,6 @@ class GamePlay:
                 # For now, set the ball's coord relative to the active fielder's coord
                 ball_coord = self.set_ball_coord()
                 self.ball.master_x, self.ball.master_y = ball_coord
-
-                """ BALL ^^^^^^^^^^^^ BALL """
                 
                 defensiveSit_play = self.defensiveSit_plays[self.curr_defensiveSit]
             
@@ -105,8 +98,32 @@ class GamePlay:
         self.situation_start = False
 
 
+    def check_ball_catch(self):
+        
+        if self.ball.curr_height_feet > 7:
+            return
+        
+        if not self.fielder_with_ball:
+        
+            for fielder in self.fielder_objects.values():
+                if fielder.ball_proximity: 
+                    self.fielder_with_ball = fielder
+                    self.ball.end_launch()
+                    print(f"Found a fielder: {fielder.man_id}")
+
+
+    def move_ball_with_fielder(self):
+       if self.fielder_with_ball:
+           
+           x, y = self.fielder_with_ball.agnostic_pos
+           x -= 0
+           y += 10
+           
+           self.ball.update_coord_for_situation( (x, y) )
+
+
     ### Ball Functions 
-    for ball in range(1):
+    for ball_stuff in range(1):
         
         def set_ball_coord(self): #curr_defensiveSit, defensiveSit_plays, fielder_standard_coord, ball_coord
             if self.situation_start:
@@ -136,6 +153,7 @@ class GamePlay:
         
         
         def launch_ball(self):
+            self.fielder_with_ball = None
             self.ball.launch_ball()
             
 
@@ -144,9 +162,9 @@ class GamePlay:
 
 
         ## User updates the variables affecting the launch
-        def update_launch_properties(self):
+        def update_user_input(self):
             ticks = pygame.time.get_ticks()  ## Number of miliseconds since pygame.init() called
-            if ticks - self.prev_ticks > 40:  ## 0.04 seconds delay between updates
+            if ticks - self.prev_ticks > 30:  ## 0.04 seconds delay between updates
                 self.prev_ticks = ticks
             
                 if self.launch_angle_increment:
@@ -155,9 +173,9 @@ class GamePlay:
                     self.ball.launch_angle_deg -= 1
                     
                 if self.launch_velo_increment:
-                    self.ball.launch_velo_mph += 1
+                    self.ball.launch_velo_mph += 2
                 if self.launch_velo_decrement:
-                    self.ball.launch_velo_mph -= 1
+                    self.ball.launch_velo_mph -= 2
                     
                 if self.launch_direction_increment:
                     self.ball.launch_direction_deg += 2          
@@ -165,36 +183,31 @@ class GamePlay:
                     self.ball.launch_direction_deg -= 2
 
 
-        def get_ball_coord(self):
-            return self.ball.coord_2D_pg
-
     ### Man Functions
     for fielders_and_baserunners in range(1):
+        
+        def update_fielders_and_baserunners(self):
+            
+            ball_coord = self.get_ball_coord()
+            
+            for fielder in self.fielder_objects.values():
+                fielder.check_base_collision(self.base_rects)
+                fielder.check_ball_proximity_2D(ball_coord)
+                
+            self.baserunner.detect_collisions(self.base_rects, self.fielder_objects)
     
         def move_fielders(self, left, right, north, south):
             for fielder in self.fielder_objects.values():
                 fielder.goal_move()
                 
                 if not( fielder.get_goal() ): 
-                    fielder.move_man(left, right, north, south) ## This overwrites the goal-setting animation unless only called when no goal
-                fielder.detect_collisions(self.base_rects)
-                
-                #fielder.draw_fielder()
+                    fielder.move_man(left, right, north, south) ## This overwrites the goal-setting animation unless only called when no goal        
+                fielder.draw_fielder()
         
         
         def move_baserunners(self, left, right, north, south):
             self.baserunner.move_baserunner(left, right, north, south)
-            
-            self.baserunner.detect_collisions(self.base_rects, self.fielder_objects)
-            
-            #self.baserunner.draw_baserunner()
-            
-            
-        def draw_players(self):
             self.baserunner.draw_baserunner()
-            
-            for fielder in self.fielder_objects.values():
-                fielder.draw_fielder()
             
     
     ## Let user choose a defensive situation -- for testing during code build 
@@ -216,10 +229,48 @@ class GamePlay:
             self.reset_numkeys()
 
 
+    ### Other gets / updates 
+    for updateValueGetValue in range(1):
+        
+        def reset_play(self):
+            self.reset_fielders()
+            self.reset_numkeys()
+            self.ball.reset_play()
+    
+        def reset_fielders(self):
+            self.fielder_objects = self.setup.make_fielders(self.fielder_standard_coord, self.screen)  # 1-9
+            
+        def reset_baserunners(self):
+            self.baserunner = self.setup.make_baserunners(self.screen)
+                                
+        def update_numkeys(self, key): 
+            self.num_keys[key] = True    
+        
+        def reset_numkeys(self): 
+            self.num_keys = [False] * 10
+            
+        def update_curr_defensiveSit(self, newSit): 
+            self.curr_defensiveSit = newSit 
+            
+        def update_situation_start(self, bool_):
+            self.situation_start = bool_
+            
+        def advance_baserunner(self):
+            self.baserunner.assign_goal()
+            
+        def remove_baserunner_goal(self):
+            self.baserunner.remove_goal()
+            
+        def update_ball_sitLoc_text(self, location_text):
+            self.ball_location_text = location_text
+            
+        def get_ball_coord(self):
+            return self.ball.coord_2D_pg
+
+
     ### Print to screen ###
     for printScreen_false_loop in range(1):
         
-        """ ANGRYBATS PRINTSCREEN FUNCTIONS """
         def write_text_onScreen(self):
             
             ### PREP
@@ -282,40 +333,6 @@ class GamePlay:
             base_attained = self.baserunner.get_base_attained()        
             if base_attained > 0:
                 self.base_attained_text = str(base_attained) + "B" 
-            
 
-    ### Other gets / updates 
-    for updateValueGetValue in range(1):
-        
-        def reset_play(self):
-            self.reset_fielders()
-            self.reset_numkeys()
-            self.ball.reset_play()
-    
-        def reset_fielders(self):
-            self.fielder_objects = self.setup.make_fielders(self.fielder_standard_coord, self.screen)  # 1-9
-            
-        def reset_baserunners(self):
-            self.baserunner = self.setup.make_baserunners(self.screen)
-                                
-        def update_numkeys(self, key): 
-            self.num_keys[key] = True    
-        
-        def reset_numkeys(self): 
-            self.num_keys = [False] * 10
-            
-            
-        def update_curr_defensiveSit(self, newSit): 
-            self.curr_defensiveSit = newSit 
-            
-        def update_situation_start(self, bool_):
-            self.situation_start = bool_
-            
-        def advance_baserunner(self):
-            self.baserunner.assign_goal()
-            
-        def remove_baserunner_goal(self):
-            self.baserunner.remove_goal()
-            
-        def update_ball_situational_location(self, location_text):
-            self.ball_location_text = location_text
+
+# Last line

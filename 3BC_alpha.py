@@ -47,7 +47,7 @@ mouse_drag_ball_toggle = False
 ##### Import key data to run the meta functions (can be discarded when final) #####
 
 ## Get foundational coordinates | dicts
-for false_loop in range(1):
+for ingest_coords in range(1):
     boundary_coords = gamePlay.boundary_coords  # lf_foulPole, cf_wall, rf_foulPole, four_B_tip, main_centroid
     boundary_thetas = gamePlay.boundary_thetas # lf_foulPole_deg, cf_deg, rf_foulPole_deg, cf_left_deg, cf_right_deg
     base_centroids = gamePlay.base_centroids  # one_B, two_B, three_B, four_B, rubber_P
@@ -56,91 +56,75 @@ for false_loop in range(1):
     defensiveSit_fielder_coord = gamePlay.defensiveSit_fielder_coord
 
 
+
+### DRAW THE BACKGROUND
+for background in range(1):
+    
+    def draw_OF_wall():
+
+        centroid = boundary_coords['main_centroid'] ## The centre of a circle that includes the OF wall arc. This point is off-screen, South
+        radius = setup.main_centroid_radius 
+        
+        ### 1. First, I need to hide a bunch of things from the png that are screwy because it is not symmetrical ####
+        ## Draw white ring -- I need to cover up part of the black OF wall beyond the new wall 
+        white_ring_thickness = 50
+        pygame.draw.circle(screen, 'white', centroid, radius + white_ring_thickness, white_ring_thickness)
+        
+        ## Draw green ring -- I need to cover up part of the white 
+        green_ring_thickness = 300
+        green = (66, 140, 66)
+        pygame.draw.circle(screen, green, centroid, radius, green_ring_thickness)
+
+        ### 2. Second, draw the perfectly symmetrical black wall and grey warning track
+        ## Draw OF wall -- the true edge of the wall is the radius, but have to start drawing past it and inwards by its thickness 
+        wall_thickness = 12
+        pygame.draw.circle(screen, 'black', centroid, radius + wall_thickness, wall_thickness)
+        
+        ## Draw warning track
+        warning_track_thickness = 50
+        warning_track_colour = (238, 238, 238)
+        pygame.draw.circle(screen, warning_track_colour, centroid, radius, warning_track_thickness)
+        
+        ### 3. Third, cover the wall either side of diamond.png, which the circles above currently extend into
+        start_x = 1862 + 10 # width of the diamond.png + offset I originally made
+        width = w - start_x
+        pygame.draw.rect( screen, 'white', pygame.Rect(0, 0, 10, h) ) ## Left side: cover the 10 pixel sliver on the left of diamond.png 
+        pygame.draw.rect( screen, 'white', pygame.Rect(start_x, 0, width, h) ) ## Right side: cover from the right-edge of diamond.png to the right edge of the screen
+
+
+    def draw_foul_lines():
+        start_coord = boundary_coords['four_B_tip']
+        lf_pole = boundary_coords['lf_foulPole']
+        rf_pole = boundary_coords['rf_foulPole']
+        chalk_thickness = 8
+        
+        pygame.draw.line(screen, 'white', start_coord, lf_pole, chalk_thickness)
+        pygame.draw.line(screen, 'white', start_coord, rf_pole, chalk_thickness)
+        
+
 ### META FUNCTIONS -- used primarily during code-buid ###
 
-## Create boundary markers -- to show all the key coord's to reference off of 
+## Show boundary markers -- foul poles, CF wall, tip of Home 
 def draw_boundary_markers():
-    
-    # Draw edges of game play
     boundary_marker_size = 7
-    base_marker_size = 2
-    
+    ring_size = 5
+
+    # Mark edge boundaries    
     for boundary_coord in boundary_coords.values():
-        pygame.draw.circle(screen, 'blue', boundary_coord, boundary_marker_size)
-        
-    # Draw centre of bases
+        pygame.draw.circle(screen, 'blue', boundary_coord, boundary_marker_size, ring_size)
+
+    # Mark base centres and rects
     for base_centroid in base_centroids.values():
-        pygame.draw.circle(screen, 'blue', base_centroid, base_marker_size) 
+        pygame.draw.circle(screen, 'blue', base_centroid, boundary_marker_size, ring_size) 
         
-    for base in base_rects.values():
-        pygame.draw.rect(screen, "blue", base, 2)
+    #for base in base_rects.values():
+    #    pygame.draw.rect(screen, "blue", base, 2)
     
-    # Draw markers for the 9 standard defensive positions    
+    # Mark 9 standard defensive positions   
     for coord in fielder_standard_coord.values():        
         pygame.draw.circle(screen, 'blue', coord, 8, 3)
     
-## Draw situational positions       
-def draw_defensiveSit_id():
-      
-    for defensiveSit_id, defensive_sit_coord in defensiveSit_fielder_coord.items():
-        pygame.draw.circle(screen, 'gray', defensive_sit_coord, 35, 2)
-        
-        text = "#" + str(defensiveSit_id)
-        
-        # string_, colour, coord, font, justification: 1 = topleft 2 = center
-        helpers.draw_text(text, 'gray', defensive_sit_coord, setup.font12, 2)
-        
-
-def draw_OF_wall():
-
-    centroid = boundary_coords['main_centroid'] ## The centre of a circle that includes the OF wall arc. This point is off-screen, South
-    radius = setup.main_centroid_radius #helpers.measure_distance_in_pixels(boundary_coords['main_centroid'], boundary_coords['cf_wall'])
-    
-    #### 1. First, I need to hide a bunch of things from the png that are screwy because it is not symmetrical ####
-    
-    ## Draw white ring -- because the png is so screwy I need to cover up part of the black OF wall beyond the new wall 
-    white_ring_thickness = 50
-    pygame.draw.circle(screen, 'white', centroid, radius + white_ring_thickness, white_ring_thickness)
-    
-    ## Draw green ring -- because the png is so screwy I need to cover up part of the white 
-    green_ring_thickness = 300
-    green = (66, 140, 66)
-    pygame.draw.circle(screen, green, centroid, radius, green_ring_thickness)
-
-
-    #### 2. Second, draw the perfectly symmetrical black wall and grey warning track
-    
-    ## Draw OF wall -- the true edge of the wall is the radius, but have to start drawing past it and inwards by its thickness 
-    wall_thickness = 12
-    pygame.draw.circle(screen, 'black', centroid, radius + wall_thickness, wall_thickness)
-    
-    ## Draw warning track
-    warning_track_thickness = 50
-    warning_track_colour = (238, 238, 238)
-    pygame.draw.circle(screen, warning_track_colour, centroid, radius, warning_track_thickness)
-    
-
-    #### 3. Third, cover the wall either side of diamond.png, which the circles above currently extend into
-    start_x = 1862 + 10 # width of the diamond.png + offset I originally made
-    width = w - start_x
-
-    # left: float, top: float, width: float, height:
-    pygame.draw.rect( screen, 'white', pygame.Rect(0, 0, 10, h) ) ## Cover the 10 pixel sliver on the left of diamond.png 
-    pygame.draw.rect( screen, 'white', pygame.Rect(start_x, 0, width, h) ) ## Cover from the right-edge of diamond.png to the right edge of the screen
-
-
-def draw_foul_lines():
-    start_coord = boundary_coords['four_B_tip']
-    lf_pole = boundary_coords['lf_foulPole']
-    rf_pole = boundary_coords['rf_foulPole']
-    chalk_thickness = 8
-    
-    pygame.draw.line(screen, 'white', start_coord, lf_pole, chalk_thickness)
-    pygame.draw.line(screen, 'white', start_coord, rf_pole, chalk_thickness)
-    
-
-def draw_arrondissements():
-    
+    ## Demarcate LF-CF-RF in blue
     centroid = boundary_coords['four_B_tip']
     dist_pixels = helpers.measure_distance_in_pixels(centroid, boundary_coords['cf_wall']) 
     
@@ -150,6 +134,19 @@ def draw_arrondissements():
     pygame.draw.line(screen, 'blue', centroid, CF_left_end, 2)
     pygame.draw.line(screen, 'blue', centroid, CF_right_end, 2)
 
+
+## Draw situational positions       
+def draw_defensiveSit_id():
+    radius = 25
+      
+    for defensiveSit_id, defensive_sit_coord in defensiveSit_fielder_coord.items():
+        pygame.draw.circle(screen, setup.med_gray_c , defensive_sit_coord, radius)
+        
+        text = "#" + str(defensiveSit_id)
+        
+        # string_, colour, coord, font, justification: 1 = topleft 2 = center
+        helpers.draw_text(text, 'white', defensive_sit_coord, setup.font12, 2)
+        
 
 def interpret_ball_location():
     
@@ -179,7 +176,11 @@ def interpret_ball_location():
     else:
         ball_loc = "Foul: right side"
 
-    gamePlay.update_ball_situational_location(ball_loc)
+
+
+
+
+    gamePlay.update_ball_sitLoc_text(ball_loc)
 
     
 ## Measure the distance from Home in feet 
@@ -369,7 +370,6 @@ while not exit:
     ## Display markers / anchor points
     if show_boundary_markers:
         draw_boundary_markers()
-        draw_arrondissements()
     
     if show_defensiveSit_coord:
         draw_defensiveSit_id() ## 
@@ -377,22 +377,23 @@ while not exit:
     if measuring_tape:
         draw_measuring_tape()
         
+    ## Situational things 
+    gamePlay.update_user_input()
+    gamePlay.choose_situation()
+    gamePlay.do_situation()
 
-    gamePlay.update_launch_properties()
-
-    if not(pause_toggle):
-        gamePlay.choose_situation()
-        gamePlay.do_situation()
-        
-        ## Update and draw fielders and baserunners
-        gamePlay.move_fielders(left, right, north, south)
-        gamePlay.move_baserunners(left, right, north, south)
-        
-        interpret_ball_location()
-
-    gamePlay.draw_players()
+    ## Game play actions 
+    gamePlay.update_fielders_and_baserunners()
+    gamePlay.move_fielders(left, right, north, south)
+    gamePlay.move_baserunners(left, right, north, south)
+    gamePlay.move_ball_with_fielder()
+    
+    ## Ball things 
+    gamePlay.check_ball_catch()
     gamePlay.move_ball(mouse_drag_ball_toggle)
+    interpret_ball_location()
     
 
     pygame.display.update() 
 
+# Last line

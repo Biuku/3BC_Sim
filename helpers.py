@@ -94,6 +94,7 @@ class Helpers:
 
 
 """ ANGRYBATS SCREEN PRINTER CLASS """
+
 class ScreenPrinter: 
     
     def __init__(self, screen, x_coord):
@@ -109,62 +110,68 @@ class ScreenPrinter:
         self.font15 = pygame.font.SysFont('Arial', 15) #pygame.font.Font('freesansbold.ttf', 15)
         self.font20 = pygame.font.SysFont('Arial', 18)
 
-    ## Pass text as a list: [start text, variable, end text]     
+
     def new_frame(self):
         self.y = self.y_constant
-    
-    def paragraph_break(self):
-        self.y += 25
-        
-    def print_simple(self, text):
-        font = self.font20
-        colour = 'black'
-        text = text[0] + " " + str(text[1]) + text[2]
 
-        text = font.render(text, True, colour)
-        text_rect = text.get_rect()
-    
-        text_rect.topleft = (self.x, self.y)
-    
-        self.screen.blit(text, text_rect)
-        
-        self.y += 25
-        
-    def print_simple_tabbed(self, text):
-        self.x += self.tab 
-        self.print_simple(text)
-        self.x -= self.tab
-        
-    def print_user_input(self, text):
-        text[2] = "  " + text[2]
-        self.print_simple(text)
-        
-    def print_rounded(self, text, rounding):
-        text[1] = round(text[1], rounding)
-        self.print_simple(text)
-        
-    def print_int(self, text):
-        text[1] = int(text[1])
-        self.print_simple(text)
-        
-    def print_coord(self, text):
-        
-        coords = []
-        for coord in text[1]:
-        
-            coords.append( int(coord) )
 
-        coords = tuple(coords)
-        text[1] = str(coords)
+    ## Pass text as a list: [start text, variable, end text]     
+    for types_of_printing in range(1):
+    
+        def print_simple(self, text):
+            font = self.font20
+            colour = 'black'
+            text = text[0] + " " + str(text[1]) + text[2]
 
+            text = font.render(text, True, colour)
+            text_rect = text.get_rect()
         
-        self.print_simple(text)
+            text_rect.topleft = (self.x, self.y)
+        
+            self.screen.blit(text, text_rect)
+            
+            self.y += 25
+            
+        def print_simple_tabbed(self, text):
+            self.x += self.tab 
+            self.print_simple(text)
+            self.x -= self.tab
+            
+        def print_user_input(self, text):
+            text[2] = "  " + text[2]
+            self.print_simple(text)
+            
+        def print_rounded(self, text, rounding):
+            text[1] = round(text[1], rounding)
+            self.print_simple(text)
+            
+        def print_int(self, text):
+            text[1] = int(text[1])
+            self.print_simple(text)
+            
+        def print_coord(self, text):
+            
+            coords = []
+            for coord in text[1]:
+            
+                coords.append( int(coord) )
+
+            coords = tuple(coords)
+            text[1] = str(coords)
+
+            
+            self.print_simple(text)
+
+        def paragraph_break(self):
+            self.y += 25
+
 
     def print_instruction_iterable(self, instruction_text, x, y):
         for text in instruction_text:
             self.draw_text(text, 'black', (x, y), self.font20, 1)
             y += 20
             
+
     def draw_text(self, string_, colour, coord, font, justification):
         text = font.render(string_, True, colour)
         text_rect = text.get_rect()
@@ -175,6 +182,7 @@ class ScreenPrinter:
             text_rect.center = coord
             
         self.screen.blit(text, text_rect)
+
 
     ## Draw a line between the playing field and the user input space
     def draw_demarcation_line(self):

@@ -31,7 +31,7 @@ class Ball:
             self.shadow = Shadow(self.screen, w, h, self.ball_radius)
             self.user_interface_start_x = user_interface_start_x
         
-        for launch_calibrations in range(1):
+        for calibrations_and_collisions in range(1):
             #### Ball launch 
             self.launched_toggle = False
             self.velocity_x_pg = 0
@@ -91,10 +91,12 @@ class Ball:
             # Height above the ground 
             self.curr_height_feet = 0        
  
-        """   UPDATE HERE   """
+ 
+        """   UPDATE START DATA HERE   """
+        
         self.launch_velo_mph = 80 # MPH
-        self.launch_angle_deg = 20 # degrees 
-        self.launch_direction_deg = 45 ## 90 = straight at 2B | 135 = 3B | 45 = 1B 
+        self.launch_angle_deg = self.master_launch_angle_deg = 20 # degrees 
+        self.launch_direction_deg = self.master_launch_direction_deg = 80 ## 90 = straight at 2B | 135 = 3B | 45 = 1B 
         
         """   ^^^^^^^^^^^^  """
 
@@ -111,11 +113,8 @@ class Ball:
         
         self.velocity_z_pg = self.launch_velo_pg * math.sin(self.launch_angle_rad)
         self.velocity_xy_pg = self.launch_velo_pg * math.cos(self.launch_angle_rad)
-        #self.update_xy_vectors()
         
 
-        ### 1. Primary movement functions 
-    
     
     for ball_movement in range(1):
         
@@ -162,49 +161,6 @@ class Ball:
             new_y = self.master_y + self.velocity_y_pg
 
             return new_x, new_y
-
-        def temp_of_wall_angle_tracer(self):
-            
-            modifier_deg = 180
-            juicer = 300
-            
-            velocity_xy_pg = self.launch_velo_pg * math.cos(self.launch_angle_rad)
-            
-            launch_direction_rad = math.radians(self.launch_direction_deg + modifier_deg)  ## At launch, radius is calculated using 180- deg... so... have to account for that here too.
-
-            x_vector = velocity_xy_pg * math.cos(launch_direction_rad) * juicer
-            y_vector = velocity_xy_pg * math.sin(launch_direction_rad) * juicer
-            
-            """
-            ## Get point on the OF Wall 
-            best_coord = (0, 0)
-            delta = 10000
-            centroid = self.setup.main_centroid
-            
-            
-            ### Get the coord where the measuring tape would intersect the OF wall
-            for distance in range(1176, 1274):
-                from_home_coord = self.helpers.theta_to_endCoord(centroid, self.launch_angle_deg, distance)
-                
-                ## get distance to that coord from the centroid
-                from_centroid_distance = self.helpers.measure_distance_in_pixels( centroid, from_home_coord)
-                
-                temp_delta = abs(from_centroid_distance - self.setup.main_centroid_radius)
-                
-                if temp_delta < delta:
-                    best_coord = from_home_coord
-                    delta = temp_delta
-            """
-
-            start_coord = self.setup.cf_wall #best_coord 
-            end_x = start_coord[0] + x_vector
-            end_y = start_coord[1] + y_vector
-            end_coord = (end_x, end_y)
-            
-            pygame.draw.line(self.screen, 'blue', start_coord, end_coord, 3)
-            pygame.draw.circle(self.screen, 'black', end_coord, 4)
-            
-            print( self.launch_direction_deg, int(x_vector), int(y_vector) )
 
 
         def move_ball_in_z(self):
@@ -264,7 +220,7 @@ class Ball:
             self.update_metrics_for_movement()
             
 
-    for checks_end_and_draw_ball in range(1):    
+    for checkEnd_and_drawBall in range(1):    
 
         def check_bounce_roll(self):
             
@@ -287,7 +243,7 @@ class Ball:
                     self.velocity_z_pg = 0
                     self.master_z = 0 # Snap to the ground
 
-
+        ## Called from ball.move_ball() -- when launched_toggle is true
         def check_end_motion(self):
             speed_stop_rolling_pg = 0.08
                 
@@ -315,6 +271,11 @@ class Ball:
        
 
         def end_launch(self):
+            
+            if self.launched_toggle: ## If the actual end of the play, do this. If resetting the start of a play, don't
+                self.launch_angle_deg = self.master_launch_angle_deg
+                self.launch_direction_deg = self.master_launch_direction_deg
+
             self.launched_toggle = False
             self.rolling_toggle = False
             self.bounce_toggle = False
@@ -353,13 +314,14 @@ class Ball:
             ## Check collisions must happen before the coord's are packed as tuples 
             self.check_collisions()
             
-            ## Back coord as tuples for each management
-            self.coord_3D_pg = (self.master_x, self.master_y, self.master_z) ## Package it up neatly for measurements
+            ## Pack coord as tuples for easy measurements
+            self.coord_3D_pg = (self.master_x, self.master_y, self.master_z)
             self.coord_2D_pg = (self.master_x, self.master_y)
             
             self.update_xy_vectors()
             self.update_distance_from_main_centroid()
             
+            ## Force a delay in updating mph, height etc., so it updates slow enough to be readable
             ticks = pygame.time.get_ticks()
             if ticks - self.prev_ticks > 100: ## 40 = 0.04 seconds delay between updates
                 self.prev_coord_3D_2 = self.prev_coord_3D 
@@ -394,7 +356,6 @@ class Ball:
 
 
         def update_height(self):
-            
             self.curr_height_feet = self.master_z / self.setup.pixels_per_foot
             self.max_height_feet = max(self.max_height_feet, self.curr_height_feet)
 
@@ -425,3 +386,49 @@ class Ball:
         self.master_x = coord[0]
         self.master_y = coord[1]
     
+
+    def temp_of_wall_angle_tracer(self):
+        
+        modifier_deg = 180
+        juicer = 300
+        
+        velocity_xy_pg = self.launch_velo_pg * math.cos(self.launch_angle_rad)
+        
+        launch_direction_rad = math.radians(self.launch_direction_deg + modifier_deg)  ## At launch, radius is calculated using 180- deg... so... have to account for that here too.
+
+        x_vector = velocity_xy_pg * math.cos(launch_direction_rad) * juicer
+        y_vector = velocity_xy_pg * math.sin(launch_direction_rad) * juicer
+        
+        """
+        ## Get point on the OF Wall 
+        best_coord = (0, 0)
+        delta = 10000
+        centroid = self.setup.main_centroid
+        
+        
+        ### Get the coord where the measuring tape would intersect the OF wall
+        for distance in range(1176, 1274):
+            from_home_coord = self.helpers.theta_to_endCoord(centroid, self.launch_angle_deg, distance)
+            
+            ## get distance to that coord from the centroid
+            from_centroid_distance = self.helpers.measure_distance_in_pixels( centroid, from_home_coord)
+            
+            temp_delta = abs(from_centroid_distance - self.setup.main_centroid_radius)
+            
+            if temp_delta < delta:
+                best_coord = from_home_coord
+                delta = temp_delta
+        """
+
+        start_coord = self.setup.cf_wall #best_coord 
+        end_x = start_coord[0] + x_vector
+        end_y = start_coord[1] + y_vector
+        end_coord = (end_x, end_y)
+        
+        pygame.draw.line(self.screen, 'blue', start_coord, end_coord, 3)
+        pygame.draw.circle(self.screen, 'black', end_coord, 4)
+        
+        print( self.launch_direction_deg, int(x_vector), int(y_vector) )
+
+
+# Last line
