@@ -2,20 +2,22 @@
 
 import pygame
 from pygame.locals import *
-from helpers import Helpers
+from itertools import cycle ## lets you cycle through a list [10, 11, 12] so upon 12 it returns to index 0
 import math
 
-from itertools import cycle ## lets you cycle through a list [10, 11, 12] so upon 12 it returns to index 0
+from helpers import Helpers
+from screen_printer import ScreenPrinter
 
 
 class Man: 
 
     def __init__(self, screen, pos, man_id):
 
+        self.helpers = Helpers()
+        self.screenPrinter = ScreenPrinter(screen)
+        
         self.screen = screen
-        self.man_id = man_id
-        self.helpers = Helpers(self.screen)
-                
+        self.man_id = man_id               
         for animation_frames in range(1):
             # Baserunner -- team Red
             self.man_L1 = pygame.image.load("images/baserunners/man_left_1.png")  
@@ -174,7 +176,7 @@ class Man:
                         self.fielder_curr_frame = next(self.fielder_frames_N)
                     
             self.screen.blit(self.fielder_curr_frame, self.fielder_rect)
-            #pygame.draw.rect(self.screen, self.rect_colour, self.fielder_rect, self.rect_thickness)
+            pygame.draw.rect(self.screen, self.rect_colour, self.fielder_rect, self.rect_thickness)
             
             ## Write fielder ID on fielder
             font = pygame.font.SysFont('Arial', 12)
@@ -183,8 +185,7 @@ class Man:
             
             text = "F" + str(self.man_id)
             
-            #self.draw_text(text, 'black', (x, y), font, 2)
-            self.helpers.draw_text(text, 'black', (x, y), font, 2)
+            self.screenPrinter.draw_text(text, 'black', (x, y), font, 2)
                 
         
         def draw_baserunner(self):
@@ -235,11 +236,25 @@ class Man:
     def get_goal(self):
         return self.goal                                
    
-    # Used by child Classes
+
+    # Used by child Classes to place the top-left corner of the rect in a way that centres the 'man' on a given coordinate 
     def offset_pos(self, pos):
         x = pos[0] - (self.sprite_size[0] / 2) 
         y = pos[1] - (self.sprite_size[1]/ 2)
         
+        #print(self.sprite_size)
+        
         return (x, y)
+    
+
+    def get_centre_coord(self):
+        x, y = self.agnostic_pos
+        
+        x += self.fielder_rect.width / 2
+        y += self.fielder_rect.height / 2
+        
+        return (x, y)
+        
+        
 
 # Last line

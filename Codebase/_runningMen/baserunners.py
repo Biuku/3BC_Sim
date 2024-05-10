@@ -6,52 +6,46 @@ Splitting my "man" Class into Fielders and Baserunners, with a common core inher
 import pygame
 from pygame.locals import *
 import math 
-
-from man_foundation import Man
 from itertools import cycle ## lets you cycle through a list [10, 11, 12] so upon 12 it returns to index 0
-from helpers import Helpers
+
+from _runningMen.man_foundation import Man
+from setup import Setup
+
+
 
 colour_white = (255, 255, 255)
 colour_red = (255, 0, 0)
 
 class Baserunner(Man):
 
-    def __init__(self, screen, base_centroids):
+    def __init__(self, screen):
         
-        ## Super requires these two 
-        self.base_centroids = base_centroids    # dict -- keys = one_B, two_B, three_B, four_B, rubber_P
-        start_pos = self.set_start_pos(base_centroids)
-         
-        super().__init__(screen, start_pos, "baserunner")   # Inheret all Mankind         
-          
+        self.setup = Setup()
         self.screen = screen
-        self.base_centroids = base_centroids
-        self.helper = Helpers(screen)
-
+         
+        super().__init__(screen, self.set_start_coord(), "baserunner")   # Inheret all Mankind         
+          
         self.goal_pos = (0, 0)
         self.base_attained = 0
         self.score = False
         
-        self.font20 = pygame.font.SysFont('Arial', 18) 
-    
     
     #### MAIN FUNCTIONS
-    
         
     for goals in range(1):
         def assign_goal(self):
             self.goal = True
             
-            goal_pos = self.base_centroids['one_B']
+            goal_pos = self.setup.base_centroids[1]
             
             if self.base_attained == 1:
-                goal_pos = self.base_centroids['two_B']
+                goal_pos = self.setup.base_centroids[2]
             
             elif self.base_attained == 2:
-                goal_pos = self.base_centroids['three_B']
+                goal_pos = self.setup.base_centroids[3]
                 
             elif self.base_attained == 3:
-                goal_pos = self.base_centroids['four_B']
+                goal_pos = self.setup.base_centroids[4]
             
             self.goal_pos = self.offset_pos(goal_pos)
 
@@ -63,14 +57,14 @@ class Baserunner(Man):
             
     for move in range(1):
         
-        def move_baserunner(self, left, right, north, south):  
+        def move_baserunner(self):  #left, right, north, south
               
             if self.goal:
                 
                 self.moving = True
                 
                 ## 1. Get theta of journey
-                self.theta_rad = self.helper.coord_to_theta(self.agnostic_pos, self.goal_pos)
+                self.theta_rad = self.helpers.coord_to_theta(self.agnostic_pos, self.goal_pos)
 
                 ## 3. Move baserunner in direction theta at speed, new_speed
                 x, y = self.agnostic_pos
@@ -84,12 +78,11 @@ class Baserunner(Man):
                 
                 if abs(x_journey) <= 2 and abs(y_journey) <= 2:
                     self.goal = False
-                    #print("Goal cancelled for baserunner: ")
                     
                 self.direction_facing = self.get_direction_facing()
 
-            else: 
-                self.move_man(left, right, north, south)
+            #else: 
+            #    self.move_man(left, right, north, south)
 
             
     for attain_base in range(1):
@@ -119,7 +112,6 @@ class Baserunner(Man):
             
             ## Cannot attain a base unless you've obtained all previous bases
             # base_collision will contain one of: one_B, two_B, three_B
-            # For now, ignoring a runner who attains 2B or 3B, then reverts back a base
             
             ## No prerequisite to attain 1B
             if base_collision == 'one_B':
@@ -139,17 +131,19 @@ class Baserunner(Man):
                         if base_collision == 'four_B':
                             self.score_run()
             
+    
     ## Called by GamePlay
     def get_base_attained(self):
         return self.base_attained
+
 
     for other_stuff in range(1):         
         
         def score_run(self):
             print("Woopie doo. You got a run") 
             
-        def set_start_pos(self, base_centroids):
-            home = base_centroids['four_B']
+        def set_start_coord(self):
+            home = self.setup.base_centroids[4]
             x = home[0] - 32
             y = home[1] - 10
             

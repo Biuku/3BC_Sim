@@ -7,19 +7,21 @@
 import pygame
 import numpy as np
 
-from ffielder import Fielder
-from bbaserunner import Baserunner
 from helpers import Helpers
+
 
 pygame.init()
 
 class Setup:
-    def __init__(self, screen, w, h):
+    def __init__(self, w = 2000):
         
-        self.screen = screen
-        self.helpers = Helpers(screen)        
-        self.screen_w = w
-        self.screen_h = h
+        self.helpers = Helpers()
+        self.fps = 90
+
+        ## I need to place screen coord and the screen itself outside of all other modules 
+        self.screen_w = 2500 #3400 #= optimal for my widescreen
+        self.screen_h = 1350
+        self.user_interface_start_x = self.screen_w - 500
 
         ## Conversion factors
         self.pixels_per_foot = 2.8088 ## Calculated in Google Sheets by averaging distance between 1B-3B and 2B-Home 
@@ -33,7 +35,7 @@ class Setup:
             self.rf_foulPole = (1839, 355) #(1780, 410)
             self.four_B_tip = (self.x_centre_line, 1245)
             self.main_centroid = (950, 1430) # This is the centre of the circle describing the OF wall / warning track (Not useful for foul lines)
-            self.main_centroid_radius = self.helpers.measure_distance_in_pixels(self.main_centroid, self.cf_wall)
+            self.main_centroid_radius = self.helpers.measure_distance_in_pixels(self.main_centroid,  self.cf_wall)
 
             # Boundary thetas -- from Home in degrees
             self.lf_foulPole_deg = 135
@@ -52,7 +54,7 @@ class Setup:
             ## INF coordinates
             self.y_infield_middle_line = 1055
             self.base_size = 10  ## 10 this is much smaller than diamond.png shows the bases, but converts to 3.6' square
-            self.base_centroids = self.get_base_centroids()
+
         
         for fonts_and_colours in range(1):  
             self.font12 = pygame.font.SysFont('Arial', 12) 
@@ -68,6 +70,20 @@ class Setup:
         for ball_data in range(1): 
             self.top_of_floor = 1350 - 17
             self.ball_launch_z = self.top_of_floor - (4 * self.pixels_per_foot) ## 4'
+
+        ## Collision constants
+        self.ball_pickup_proximity_threshold_pg = 25 ## How close the centre pixel of a fielder needs to be to the centre of the ball to pick up it 
+        
+        ## Packaged coords
+        self.boundaries = self.get_boundaries()
+        self.boundary_thetas = self.get_boundary_thetas()
+        self.base_centroids = self.get_base_centroids()
+        self.base_rects = self.make_bases()
+
+        self.fielder_standard_coord = self.get_fielder_standard_coord()
+        self.defensiveSit_fielder_coord = self.get_defensiveSit_fielder_coord()
+        self.defensiveSit_plays = self.get_defensiveSit_plays()
+        
 
 
     #### MAIN FUNCTIONS
@@ -94,36 +110,46 @@ class Setup:
                                 "cf_right_deg": self.cf_right_deg,
                             }
             return boundary_thetas
-
+        
 
     for field_positions in range(1):
 
         ## Hard coded coordinates for the centre-of-mass of each of the 4 bases    
         def get_base_centroids(self):
             
+            """
             base_centroids = {"one_B":  (1130, self.y_infield_middle_line),      
                             "two_B":    (self.x_centre_line, 880),
                             "three_B":  (768, self.y_infield_middle_line),
                             "four_B":   (self.x_centre_line, 1235), 
                             'rubber_P':   (self.x_centre_line, self.y_infield_middle_line - 5),
                             }
+            """
+            
+            base_centroids = {
+                        1:      (1130, self.y_infield_middle_line),      
+                        2:      (self.x_centre_line, 880),
+                        3:      (768, self.y_infield_middle_line),
+                        4:      (self.x_centre_line, 1235), 
+                        'p':    (self.x_centre_line, self.y_infield_middle_line - 5),
+                        }
             
             return base_centroids
 
-        def get_fielder_standard_coord(self, base_centroids):
+        def get_fielder_standard_coord(self):
             fielder_standard_coord = {}
 
-            ## Coord for INF
-            fielder_standard_coord[3] = (1144, 950) #fielder ID: 3  |  new_coord: (1144, 950)
-            fielder_standard_coord[4] = (1034, 845) #fielder ID: 4  |  new_coord: (1034, 845)
-            fielder_standard_coord[5] = (743, 960)  #fielder ID: 5  |  new_coord: (743, 960)
-            fielder_standard_coord[6] = (840, 840)  #fielder ID: 6  |  new_coord: (840, 840)
+            ## Coord for INF f3 - f6
+            fielder_standard_coord[3] = (1144, 950) 
+            fielder_standard_coord[4] = (1034, 845) 
+            fielder_standard_coord[5] = (743, 960)  
+            fielder_standard_coord[6] = (840, 840)  
             
-            ## Get coord for f1, f2
-            fielder_standard_coord[1] = base_centroids['rubber_P']
-            fielder_standard_coord[2] = base_centroids['four_B'][0], base_centroids['four_B'][1]+40
+            ## Coord for f1, f2
+            fielder_standard_coord[1] = self.base_centroids['p']
+            fielder_standard_coord[2] = self.base_centroids[4][0], self.base_centroids[4][1] + 40  ## Move Catcher south of the plate
             
-            ## Get coord for OF
+            ## Coord for OF
             fielder_standard_coord[7] = self.LF
             fielder_standard_coord[8] = self.CF
             fielder_standard_coord[9] = self.RF
@@ -134,12 +160,12 @@ class Setup:
     for make_objects in range(1):
         
         ## Build the Rects for collision detection at the 4 bases 
-        def make_bases(self, base_centroids):
+        def make_bases(self):
 
             base_offset = self.base_size // 2
             base_rects = {}
             
-            for key, base_centroid in base_centroids.items():
+            for key, base_centroid in self.base_centroids.items():
                 
                 # Rect = left, top, width, height
                 base = pygame.Rect(base_centroid[0]-base_offset, base_centroid[1]-base_offset, self.base_size, self.base_size)
@@ -147,32 +173,15 @@ class Setup:
             
             return base_rects
         
-        
-        ## Create 9 instances of 'Man' object and return in a dict with keys as integers 1 to 9 
-        def make_fielders(self, fielder_standard_coord, screen):
-
-            fielder_objects = {}
-            
-            for fielder_id in [1, 2, 3, 4, 5, 6, 7, 8, 9]:
-                pos = fielder_standard_coord[fielder_id]                
-                fielder_objects[fielder_id] = Fielder(screen, pos, fielder_id)
-                
-            return fielder_objects
-        
-        
-        def make_baserunners(self, screen):
-            return Baserunner(screen, self.base_centroids)
-
 
     for defensive_sit in range(1):
         
-        def get_defensiveSit_fielder_coord(self, base_centroids):
+        def get_defensiveSit_fielder_coord(self):
             sprite_size = 32 - 13 # Playing with numbers to get the fielder very close to where he needs to be 
-            B1 = base_centroids['one_B'] 
-            B2 = base_centroids['two_B']
-            B3 = base_centroids['three_B']
-            B4 = base_centroids['four_B']
-            rubber = base_centroids['rubber_P']
+            B1 = self.base_centroids[1] 
+            B2 = self.base_centroids[2]
+            B3 = self.base_centroids[3]
+            B4 = self.base_centroids[4]
 
             # 100   | 1 backs up 2B
             _100 = (B2[0] -40, B2[1] + 90)

@@ -5,9 +5,12 @@ Splitting my "man" Class into Fielders and Baserunners, with a common core inher
 
 import pygame
 from pygame.locals import *
-from man_foundation import Man
 from itertools import cycle ## lets you cycle through a list [10, 11, 12] so upon 12 it returns to index 0
 import math
+
+from _runningMen.man_foundation import Man
+
+
 
 colour_white = (255, 255, 255)
 colour_red = (255, 0, 0)
@@ -20,8 +23,7 @@ class Fielder(Man):
         self.screen = screen
         self.goal_pos = (0,0)
         self.base_collision = 0
-        self.ball_proximity = False
-
+        #self.ball_proximity = False
 
     #### MAIN FUNCTIONS
 
@@ -41,7 +43,7 @@ class Fielder(Man):
                 self.moving = True
                 
                 ## 1. Get theta of journey
-                self.theta_rad = self.helper.coord_to_theta(self.agnostic_pos, self.goal_pos)
+                self.theta_rad = self.helpers.coord_to_theta(self.agnostic_pos, self.goal_pos)
 
                 ## 3. Move baserunner in direction theta at speed, new_speed
                 x, y = self.agnostic_pos
@@ -74,16 +76,18 @@ class Fielder(Man):
                 self.rect_thickness = 4
                 self.rect_colour = colour_red
                 
-                if key in ['one_B', 'two_B', 'three_B', 'four_B']:  # Exclude collisions with the rubber
+                if key in [1, 2, 3, 4]:  # Exclude collisions with the rubber
                     self.base_collision = key
 
 
-    def check_ball_proximity_2D(self, ball_coord_2D_pg):       
-        distance_feet = self.helpers.measure_distance_in_feet(self.agnostic_pos, ball_coord_2D_pg)
+    def check_ball_proximity_2D(self, ball_coord_2D_pg, proximity_threshold_pg):
         
-        if distance_feet < 4:
-            self.ball_proximity = True
+        fielder_centre_coord = self.get_centre_coord()
+            
+        distance_pg = self.helpers.measure_distance_in_pixels(fielder_centre_coord, ball_coord_2D_pg)
+        
+        if distance_pg < proximity_threshold_pg:
+            return True
 
-    
-    
+
 ## Last line

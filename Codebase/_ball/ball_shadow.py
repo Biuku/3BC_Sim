@@ -2,7 +2,7 @@ import pygame
 from pygame.locals import *
 import math
 import random
-from helpers import Helpers
+
 from setup import Setup
 
 
@@ -11,13 +11,14 @@ pygame.init()
 
 class Shadow:
     
-    def __init__(self, screen, w, h, radius):
+    def __init__(self, screen, radius):
         self.master_y = 0
         self.master_x = 0
         
         for _ in range(1):
+            self.setup = Setup()
+            
             self.screen = screen
-            self.setup = Setup(self.screen, w, h)
 
             ## Constants
             self.thickness = 3
