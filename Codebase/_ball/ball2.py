@@ -42,7 +42,7 @@ class Ball:
             self.velocity_y_pg = 0
             self.velocity_xy_pg = 0
             self.velocity_z_pg = 0
-                           
+
             #### Calibrations
             self.gravity = 7 / 1000 # 8 worked well for high, short fly ball
             self.mph_to_pg = 31 / 1000 # 28 worked well for high, short fly ball  
@@ -56,40 +56,22 @@ class Ball:
             # Bounce off OF wall
             self.OF_wall_toggle = False
             self.super_OF_wall_toggle = True # Can be turned False, can never be turned True during a play
-            #self.curr_distance_from_main_centroid = 0
-            self.bounce_off_OF_wall_lossy_xy = 20/100 
+            self.bounce_off_OF_wall_lossy_xy = 20 / 100 
 
             # Rolling        
             self.rolling_toggle = False
-            self.jitter = 3 # Number of z pixels the ball hops (randomly) when rolling  
             self.rolling_lossy_pct = 99.5 / 100  # 99.5% = 0.5% loss per frame
             
-            ## Tracers for calibrations
-            # Time tracers
-            self.launch_start_ms = 0
-            self.flight_duration_s = 0  
-            self.total_duration_s = 0  
-            
-
         for coord in range(1):
             #### Master coord -- single source of truth
             self.master_x = self.setup.four_B_tip[0]
             self.master_y = self.setup.four_B_tip[1]
             self.master_z = 3 * 2.8  ## This is the height in pixels above the AngryBats screen_h - floor_width
             
-            
-            ## Create ball rect
-            x = self.master_x - self.master_ball_radius
-            y = self.master_y - self.master_ball_radius
-            w = h = self.master_ball_radius * 2
-            
-            self.rect = pygame.Rect(x, y, w, h)
-            
-            
-            # Cord tubles 
+            # Cord tuples 
             self.coord_2D_pg = (self.master_x, self.master_y)
             self.coord_3D_pg = (self.master_x , self.master_y,  self.master_z)
-        
+
         for metrics in range(1):
             # Velocity
             self.curr_velo_mph = 0 
@@ -102,41 +84,34 @@ class Ball:
             self.curr_distance_from_home_feet = 0
             self.curr_height_feet = 0    
             self.max_height_feet = 0
- 
-        self.fielder_possession = False
- 
+
+
         """   UPDATE START DATA HERE   """
-        
+
         self.launch_velo_mph = 80 # MPH
         self.launch_angle_deg = self.master_launch_angle_deg = 20 # degrees 
         self.launch_direction_deg = self.master_launch_direction_deg = 80 ## 90 = straight at 2B | 135 = 3B | 45 = 1B 
-        
+
         """   ^^^^^^^^^^^^  """
 
 
     #### Functions ####
-
     def launch_ball(self):
         self.reset_play()
         
         self.launched_toggle = True
         self.super_OF_wall_toggle = True
         
-        self.launch_start_ms = pygame.time.get_ticks()
-        
         self.velocity_z_pg = self.launch_velo_pg * math.sin(self.launch_angle_rad)
         self.velocity_xy_pg = self.launch_velo_pg * math.cos(self.launch_angle_rad)
-        
 
-    
+
     for ball_movement in range(1):
         
         def move_ball(self):
                     
             if self.launched_toggle:
-                ## Update variables 
-                self.total_duration_s = self.helpers.get_total_time_seconds(self.launch_start_ms)
-                
+
                 ## Check state 
                 self.check_end_motion()  ## Only checks if rolling = True
                 self.check_bounce_roll()
@@ -148,104 +123,127 @@ class Ball:
                 self.master_x = new_x
                 self.master_y = new_y
                 self.master_z = new_z
-        
+
             self.update_metrics_for_movement()
-            self.draw_ball()
-            #self.temp_of_wall_angle_tracer()
-            
+
 
         def move_ball_in_xy(self):
 
             if self.rolling_toggle:
                 self.velocity_xy_pg *= self.rolling_lossy_pct
            
-            ## Bounce off the OF wall
             if self.OF_wall_toggle:
+                self.bounce_off_OF_wall()
 
-                ## The OF wall is line a parabola facing the plate, so a batted ball should bounce straight back 
-                self.launch_direction_deg += 180
-                self.velocity_xy_pg *= self.bounce_off_OF_wall_lossy_xy
-                
-                self.update_for_user_inputs() ## Need to convert master degrees to master radians
-                self.update_xy_vectors() ## Need to vectorize xy into x and y 
-                
-            
             new_x = self.master_x + self.velocity_x_pg
             new_y = self.master_y + self.velocity_y_pg
 
             return new_x, new_y
 
 
+        def bounce_off_OF_wall(self):
+
+            self.launch_direction_deg += 180   # The OF wall is line a parabola facing the plate, so a batted ball should bounce straight back 
+            self.velocity_xy_pg *= self.bounce_off_OF_wall_lossy_xy
+                
+            self.update_for_user_inputs() ## Need to convert master degrees to master radians
+            self.update_xy_vectors() ## Need to vectorize xy into x and y 
+            
+            self.OF_wall_toggle = False
+
+
         def move_ball_in_z(self):
 
-            if not(self.rolling_toggle):
-                if not(self.bounce_toggle):
-                    
-                    ## Pre-bounce / first flight
-                    self.velocity_z_pg -= self.gravity
+            if not self.rolling_toggle:
+                if not self.bounce_toggle:
+                    self.velocity_z_pg -= self.gravity  ## No bounce
                 
                 ## Bounce
                 elif self.bounce_toggle:
             
-                    self.velocity_z_pg *= -1 # Bounce = change direction 
-                    self.velocity_z_pg *= self.bounce_lossy_z # Bounce = lose some z velocity 
-                    
+                    self.velocity_z_pg *= -1 * self.bounce_lossy_z # Change direction AND lose some z velocity  
                     self.velocity_xy_pg *= self.bounce_lossy_xy # A once-per-bounce xy speed reduction at the moment of impact
                     
-                    ## Add some inpredictability to the hop  
-                    bounce_jitter = (random.randrange(-self.jitter, self.jitter))/100
-                    self.velocity_xy_pg *= (1 - bounce_jitter )
-      
                     self.bounce_toggle = False
-   
-            elif self.rolling_toggle:
-
-                ## Add jitter if the ball is rolling with some speed
-                if self.curr_velo_mph > 15:
-                    self.master_x += random.randrange(-self.jitter, self.jitter)
-                    self.master_y += random.randrange(-self.jitter, self.jitter)
-            
-            ## If the ball collides off the OF wall, take some z velo off (lol, almost said 'zelo' ... )
-            if self.OF_wall_toggle:
-                
-                #self.velocity_z_pg = -1 * abs(self.velocity_z_pg) ## Ensure it's going down off the wall
-                self.velocity_z_pg *= self.bounce_lossy_z ## Take off some z velo
-                
-                self.OF_wall_toggle = False
             
             return self.master_z + self.velocity_z_pg 
 
 
         def embiggen_ball_for_height(self):
-
             amplifed_factor = self.shadow.master_ball_height_pct * 1.6
-            
             only_big_factor = max(amplifed_factor, 0.15) - 0.15  ## Set the factor_pct to zero if it's close to zero -- don't fuss near the ground 
-            
             self.ball_radius = self.master_ball_radius * (1 + only_big_factor)
 
-            
+
         def mouse_drag_ball(self):
             self.master_x, self.master_y = pygame.mouse.get_pos()
             self.launched_toggle = False
             self.rolling_toggle = False
             
             self.update_metrics_for_movement()
-            
 
-    for checkEnd_and_drawBall in range(1):    
+
+    for ball_movement_support in range(1):
+
+        def update_xy_vectors(self):
+                ## Vectorize self.velocity_xy_pg for x and y vectors
+                self.velocity_x_pg = self.velocity_xy_pg * math.cos(self.launch_direction_rad)
+                self.velocity_y_pg = self.velocity_xy_pg * math.sin(self.launch_direction_rad)
+
+
+        def update_metrics_for_movement(self):
+            self.update_for_user_inputs()  ## if launch data has been updated, need to update conversion to radians, etc.
+            self.update_xy_vectors()
+            
+            ## Check collisions must happen before the coord's are packed as tuples 
+            self.check_collisions()
+            
+            ## Pack coord as tuples for easy measurements
+            self.coord_3D_pg = (self.master_x, self.master_y, self.master_z)
+            self.coord_2D_pg = (self.master_x, self.master_y)
+
+            ## Update the more tedius metrics in 'ball_helpers' sub-module
+            packaged_returnable = self.ball_helpers.update_kpi_metrics(self.master_z, self.coord_3D_pg)
+            
+            self.curr_velo_mph = packaged_returnable['velo']
+            self.curr_distance_from_home_feet = packaged_returnable['distance']
+            self.curr_height_feet = packaged_returnable['height']
+            self.max_height_feet = packaged_returnable['max height']
+
+
+    for ball_collisions in range(1):
+        
+        def check_collisions(self):           
+            edge_buffer = 20
+            
+            self.master_x = min(self.master_x, self.user_interface_start_x) 
+            self.master_x = max(self.master_x, edge_buffer) # Left edge
+            self.master_y = min(self.master_y, self.setup.screen_h - edge_buffer) # bottom
+            self.master_y = max(self.master_y, edge_buffer) # Top
+
+            ### Check collision with OF wall
+            self.check_OF_wall_collision()
+
+
+        def check_OF_wall_collision(self):
+           
+            if self.super_OF_wall_toggle:
+                                
+                ball_dist_from_main_centroid_pg = self.helpers.measure_distance_in_pixels(self.setup.main_centroid, self.coord_2D_pg) - self.ball_radius
+                
+                if ball_dist_from_main_centroid_pg >= self.helpers.main_centroid_radius:
+                    self.OF_wall_toggle = True ## Tells the xy movement function to reverse xy direction
+                    self.super_OF_wall_toggle = False ## Never check for OF bounce a second time ... let the ball get clear of the OF wall
+
+
+    for checkEnd_and_drawBall in range(1):
 
         def check_bounce_roll(self):
             
-            if self.master_z < 0: 
+            if self.master_z < 1: 
 
                 # Coming in hot = bounce
                 if self.velocity_z_pg < -0.2:
-                    
-                    ## On first bounce, capture flight duration for tracer
-                    if self.bounce_toggle == False:
-                        self.flight_duration_s = self.total_duration_s
-                
                     self.bounce_toggle = True
                     self.bounce_count += 1
 
@@ -256,6 +254,7 @@ class Ball:
                     self.velocity_z_pg = 0
                     self.master_z = 0 # Snap to the ground
 
+
         ## Called from ball.move_ball() -- when launched_toggle is true
         def check_end_motion(self):
             speed_stop_rolling_pg = 0.08
@@ -264,28 +263,6 @@ class Ball:
                 if abs(self.velocity_xy_pg) < speed_stop_rolling_pg:
                     self.end_launch()
 
-
-        def check_collisions(self):           
-            edge_buffer = 20
-            
-            self.master_x = min(self.master_x, self.user_interface_start_x) 
-            self.master_x = max(self.master_x, edge_buffer) # Left edge
-            self.master_y = min(self.master_y, self.setup.screen_h - edge_buffer) # bottom
-            self.master_y = max(self.master_y, edge_buffer) # Top
-
-            ### Check collision with OF wall
-            if self.super_OF_wall_toggle:
-                ## If you are on the circle that describes the OF wall bounce off the wall 
-                                
-                ball_dist_from_main_centroid = self.helpers.measure_distance_in_pixels(self.setup.main_centroid, self.coord_2D_pg) - self.ball_radius
-                #main_centroid_radius = self.helpers.measure_distance_in_pixels(self.setup.main_centroid, self.setup.cf_wall)
-                 
-                
-                if ball_dist_from_main_centroid >= self.setup.main_centroid_radius:
-                    self.OF_wall_toggle = True
-                    self.super_OF_wall_toggle = False ## Never check a second time
-                    print("Turn on wall-bounce flag")
-       
 
         def end_launch(self):
             
@@ -310,7 +287,6 @@ class Ball:
             self.master_z = 3*2.8 # 3' off the ground
             
             self.bounce_count = 0
-            self.flight_duration_s = 0
             self.max_height_feet = 0
 
 
@@ -323,36 +299,9 @@ class Ball:
             pygame.draw.circle(self.screen, self.setup.med_gray_c, self.coord_2D_pg, self.ball_radius, self.ball_edge_thickness)
 
 
-    def update_xy_vectors(self):
-            ## Vectorize self.velocity_xy_pg for x and y vectors
-            self.velocity_x_pg = self.velocity_xy_pg * math.cos(self.launch_direction_rad)
-            self.velocity_y_pg = self.velocity_xy_pg * math.sin(self.launch_direction_rad)
-    
+    for update_metrics in range(1):
 
-    def update_metrics_for_movement(self):
-        self.update_for_user_inputs()  ## if launch data has been updated, need to update conversion to radians, etc.
-        self.update_xy_vectors()
-        
-        ## Check collisions must happen before the coord's are packed as tuples 
-        self.check_collisions()
-        
-        ## Pack coord as tuples for easy measurements
-        self.coord_3D_pg = (self.master_x, self.master_y, self.master_z)
-        self.coord_2D_pg = (self.master_x, self.master_y)
-        self.rect.center = self.coord_2D_pg
-
-        ## Update the more tedius metrics in 'ball_helpers' sub-module
-        packaged_returnable = self.ball_helpers.update_kpi_metrics(self.master_z, self.coord_3D_pg)
-        
-        self.curr_velo_mph = packaged_returnable['velo']
-        self.curr_distance_from_home_feet = packaged_returnable['distance']
-        self.curr_height_feet = packaged_returnable['height']
-        self.max_height_feet = packaged_returnable['max height']
-
-
-    for update_metrics in range(1):         
-
-        def receive_user_input(self, launch_metrics):
+        def receive_launch_data(self, launch_metrics):
             ticks = pygame.time.get_ticks()  ## Number of miliseconds since pygame.init() called
             
             if ticks - self.prev_ticks > 30:  ## 0.04 seconds delay between updates
@@ -363,8 +312,8 @@ class Ball:
                 self.launch_direction_deg += launch_metrics['launch_direction']
                 
                 self.update_for_user_inputs()
-            
-            
+
+
         def update_for_user_inputs(self):
             self.launch_velo_pg = self.launch_velo_mph * self.mph_to_pg
             self.launch_angle_rad = math.radians(180 - self.launch_angle_deg)
@@ -376,30 +325,24 @@ class Ball:
             pygame.draw.line(self.screen, 'grey', start, end, 2)
 
 
-        def update_possession(self, possession):
-            self.fielder_possession = possession
-
-
     ## Gameplay updates coord 
     def update_coord_for_situation(self, coord):
         self.master_x = coord[0]
         self.master_y = coord[1]
 
+
     ## When a fielder drops the ball they should fling it far enough away that they don't immediately pick it back up
     def fielder_drop_the_ball(self):
         
-        dist_pg = self.setup.ball_pickup_proximity_threshold_pg
-        dist_pg *= 1.3 ## Drop the ball just a little further than your pickup range 
+        dist_pg = 1.3 * self.setup.ball_catch_proximity ## Drop the ball just a little further than your pickup range 
         theta = 225
         
-        new_coord = self.helpers.theta_to_endCoord( self.coord_2D_pg, theta, dist_pg)
-        
-        self.master_x = new_coord[0]
-        self.master_y = new_coord[1]
+        self.master_x, self.master_y = self.helpers.theta_to_endCoord( self.coord_2D_pg, theta, dist_pg)
+
         self.update_metrics_for_movement() ## Update the packaged coord used to detect collisions
 
 
-    
+    ## Send ball date to gamePlay for screen printng
     def package_data_objects(self):
         
         ball_metrics_screen_text = {   
@@ -411,13 +354,9 @@ class Ball:
                 "ball_coord": self.coord_2D_pg,
                 "launched_toggle": self.launched_toggle,
                 "rolling_toggle": self.rolling_toggle,
-                "total_time": self.total_duration_s,
-                "flight_time": self.flight_duration_s,
                 "num_bounces": self.bounce_count,
             }
-        
-        return ball_metrics_screen_text
-    
 
+        return ball_metrics_screen_text
 
 # Last line

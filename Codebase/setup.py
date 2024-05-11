@@ -7,7 +7,7 @@
 import pygame
 import numpy as np
 
-from helpers import Helpers
+#from helpers import Helpers
 
 
 pygame.init()
@@ -15,7 +15,7 @@ pygame.init()
 class Setup:
     def __init__(self, w = 2000):
         
-        self.helpers = Helpers()
+        #self.helpers = Helpers()
         self.fps = 90
 
         ## I need to place screen coord and the screen itself outside of all other modules 
@@ -27,6 +27,7 @@ class Setup:
         self.pixels_per_foot = 2.8088 ## Calculated in Google Sheets by averaging distance between 1B-3B and 2B-Home 
         self.pixels_per_step = self.pixels_per_foot * 2.5 
 
+
         for boundaries in range(1):
             #Boundary coord
             self.x_centre_line = 950
@@ -35,7 +36,6 @@ class Setup:
             self.rf_foulPole = (1839, 355) #(1780, 410)
             self.four_B_tip = (self.x_centre_line, 1245)
             self.main_centroid = (950, 1430) # This is the centre of the circle describing the OF wall / warning track (Not useful for foul lines)
-            self.main_centroid_radius = self.helpers.measure_distance_in_pixels(self.main_centroid,  self.cf_wall)
 
             # Boundary thetas -- from Home in degrees
             self.lf_foulPole_deg = 135
@@ -43,6 +43,7 @@ class Setup:
             self.rf_foulPole_deg = 45
             self.cf_left_deg = 105
             self.cf_right_deg = 75
+
 
         for field_positions in range(1):
             ## OF positions
@@ -55,7 +56,6 @@ class Setup:
             self.y_infield_middle_line = 1055
             self.base_size = 10  ## 10 this is much smaller than diamond.png shows the bases, but converts to 3.6' square
 
-        
         for fonts_and_colours in range(1):  
             self.font12 = pygame.font.SysFont('Arial', 12) 
             self.font15 = pygame.font.SysFont('Arial', 15) #pygame.font.Font('freesansbold.ttf', 15)
@@ -66,13 +66,14 @@ class Setup:
             self.dark_gray_c = (47,47,47)
             self.green_grass_c = (65,152,10)
             self.extremely_light_blue_c = (225, 245, 245) 
-        
+
+
         for ball_data in range(1): 
             self.top_of_floor = 1350 - 17
             self.ball_launch_z = self.top_of_floor - (4 * self.pixels_per_foot) ## 4'
 
         ## Collision constants
-        self.ball_pickup_proximity_threshold_pg = 25 ## How close the centre pixel of a fielder needs to be to the centre of the ball to pick up it 
+        self.ball_catch_proximity = 25 ## How close the centre pixel of a fielder needs to be to the centre of the ball to pick up it 
         
         ## Packaged coords
         self.boundaries = self.get_boundaries()
@@ -82,9 +83,9 @@ class Setup:
 
         self.fielder_standard_coord = self.get_fielder_standard_coord()
         self.defensiveSit_fielder_coord = self.get_defensiveSit_fielder_coord()
-        self.defensiveSit_plays = self.get_defensiveSit_plays()
+        self.defensive_plays = self.get_defensive_plays()
+        self.field_direction_thetas = self.make_field_direction_thetas()
         
-
 
     #### MAIN FUNCTIONS
 
@@ -116,15 +117,6 @@ class Setup:
 
         ## Hard coded coordinates for the centre-of-mass of each of the 4 bases    
         def get_base_centroids(self):
-            
-            """
-            base_centroids = {"one_B":  (1130, self.y_infield_middle_line),      
-                            "two_B":    (self.x_centre_line, 880),
-                            "three_B":  (768, self.y_infield_middle_line),
-                            "four_B":   (self.x_centre_line, 1235), 
-                            'rubber_P':   (self.x_centre_line, self.y_infield_middle_line - 5),
-                            }
-            """
             
             base_centroids = {
                         1:      (1130, self.y_infield_middle_line),      
@@ -255,7 +247,6 @@ class Setup:
                 - There's a lot of overlap, so I wrote down each action, numbering them from 100 onwards
                 - The numbering has no significance -- the Google Sheets index is the menu
                 - I manually found the coordinates for each defensive coverage action 
-                - I will ultimately encode each defensive play, picking from this menu of actions 
             
             """ 
 
@@ -266,27 +257,17 @@ class Setup:
                     121: _121             
                     }
 
-            """
-            defensiveSit_fielder_coord = {    
-                            100: _100,
-                            1000: _1000,
-                            103: _103,
-                            1003: _1003,                         
-                            106: _106,
-                            1006: _1006,
-                            }
-            """
             return defensiveSit_fielder_coord
 
 
-        def get_defensiveSit_plays(self):
+        def get_defensive_plays(self):
         
             # Below, each defensive play is a key, and the list of 0-9 provides plays for all defensive players
             # 1 = field the ball
             # 2 = back up the guy fielding the ball
             # 0th position is the string description of the play
             
-            defensiveSit_plays = {3: ["Nobody on, single to LF", 100, 101, 102, 107, 104, 109, 1, 2, 115],
+            defensive_plays = {3: ["Nobody on, single to LF", 100, 101, 102, 107, 104, 109, 1, 2, 115],
                                 4: ["Nobody on, single to CF", 100, 101, 102, 107, 104, 108, 2, 1, 2],
                                 5: ["Nobody on, single to RF", 100, 101, 102, 103, 104, 105, 106, 2, 1],
                                 6: ["R1, single to LF", 110, 111, 102, 107, 104, 114, 1, 2, 115],
@@ -297,4 +278,20 @@ class Setup:
                                 11: ["R2, single to RF", 116, 111, 118, 112, 104, 105, 121, 2, 1],           
             }
                 
-            return defensiveSit_plays
+            return defensive_plays
+
+
+        def make_field_direction_thetas(self):
+            
+            field_direction_thetas = {
+                'lf_foulPole_deg': "Foul: left side",
+                'cf_left_deg': "Left field",
+                'cf_right_deg': "Centre field",
+                'rf_foulPole_deg': "Right field"
+            }
+            
+            return field_direction_thetas
+            
+            
+            
+             

@@ -44,7 +44,7 @@ measuring_tape = False
 mouse_drag_ball_toggle = False
 
 ### 0 = no change, -2 = down; 2 = up
-launch_metrics = {"exit_velo": 0,
+launch_metrics_deltas = {"exit_velo": 0,
                   "launch_angle": 0,
                   "launch_direction": 0
                   }
@@ -72,7 +72,7 @@ for background in range(1):
 
         centroid = setup.boundaries['main_centroid'] ## The centre of a circle that includes the OF wall arc. This point is off-screen, South
         
-        radius = setup.main_centroid_radius #helpers.measure_distance_in_pixels(centroid,  setup.boundaries['cf_wall'])
+        radius = helpers.main_centroid_radius #helpers.measure_distance_in_pixels(centroid,  setup.boundaries['cf_wall'])
         
         ### 1. First, I need to hide a bunch of things from the png that are screwy because it is not symmetrical ####
         ## Draw white ring -- I need to cover up part of the black OF wall beyond the new wall 
@@ -262,31 +262,30 @@ while not exit:
                 
                 
             ## Modify launch velo and angle 
-            for modify_launch_metrics in range(1):
+            for modify_launch_metrics_deltas in range(1):
 
                 if event.key == K_w:
-                    launch_metrics['launch_angle'] = 2
+                    launch_metrics_deltas['launch_angle'] = 2
 
                 if event.key == K_s:
-                    launch_metrics['launch_angle'] = -2
+                    launch_metrics_deltas['launch_angle'] = -2
 
                 if event.key == K_d:
-                    launch_metrics['exit_velo'] = 2
+                    launch_metrics_deltas['exit_velo'] = 2
 
                 if event.key == K_a:
-                    launch_metrics['exit_velo'] = -2
+                    launch_metrics_deltas['exit_velo'] = -2
 
                 if event.key == K_x:
-                    launch_metrics['launch_direction'] = -2
+                    launch_metrics_deltas['launch_direction'] = -2
 
                 if event.key == K_z:
-                    launch_metrics['launch_direction'] = 2
-                            
-                            
-            ### Set up stuff 
-            
-            ## Option selection keys
-            
+                    launch_metrics_deltas['launch_direction'] = 2
+
+
+            ### Set up stuff
+            # Option selection keys
+
             for i, num_key in enumerate( [K_0, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9] ):
                 if event.key == num_key:
                     num_keys[i] = True
@@ -298,22 +297,22 @@ while not exit:
                     reset_numkeys()
                     gamePlay.reset_play()
                     gamePlay.update_curr_defensiveSit(0)
-                    
+
                 if event.key == K_RETURN:
                     gamePlay.update_situation_start(True)
-            
+
                 if event.key == K_b:
                     show_boundary_markers = not(show_boundary_markers)
-                    
+
                 if event.key == K_n:
                     show_defensiveSit_coord = not(show_defensiveSit_coord)
-                    
+
                 if event.key == K_m:
                     measuring_tape = not(measuring_tape)
-                
+
                 if event.key == K_SPACE:
                     gamePlay.launch_ball()
-                    
+
                 if event.key == K_r:
                     gamePlay.advance_baserunner()
                 
@@ -334,9 +333,9 @@ while not exit:
                 if event.key == K_DOWN or event.key == K_KP2:
                     south = False
             
-            launch_metrics['exit_velo'] = 0
-            launch_metrics['launch_angle'] = 0
-            launch_metrics['launch_direction'] = 0
+            launch_metrics_deltas['exit_velo'] = 0
+            launch_metrics_deltas['launch_angle'] = 0
+            launch_metrics_deltas['launch_direction'] = 0
     
     
         for mouse_button_events in range(1):
@@ -344,9 +343,6 @@ while not exit:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1: # left click
                     mouse_drag_ball_toggle = True
-                    
-                if event.button == 3: # right_click
-                    gamePlay.drop_ball()
         
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1: # Left click
@@ -354,7 +350,6 @@ while not exit:
                     
 
     #### Main actions ####
-
     
     ## Display markers / anchor points
     for meta_funcs in range(1):
@@ -366,12 +361,11 @@ while not exit:
             
         if measuring_tape:
             draw_measuring_tape()
-        
-    
+
     ## Pre-pitch things
     curr_defensiveSit = choose_situation(curr_defensiveSit)
     num_keys = reset_numkeys()
-    gamePlay.update_user_input(launch_metrics)
+    gamePlay.send_launch_data_to_ball(launch_metrics_deltas)
     
     ## Baseball situation exexition 
     gamePlay.master_situation_control(left, right, north, south, mouse_drag_ball_toggle)

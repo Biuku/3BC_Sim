@@ -1,6 +1,4 @@
-""" Created: April 16 
-
-Shifting a few common functions here
+""" Created: April 16 | Shifting a few common functions here
 
 """
 
@@ -9,21 +7,27 @@ from pygame.locals import *
 import math
 import numpy as np
 
+from setup import Setup
+
 pygame.init()
 
 
 class Helpers:
     
     def __init__(self):
+        
+        self.setup = Setup()
+        self.main_centroid_radius = self.measure_distance_in_pixels(self.setup.main_centroid,  self.setup.cf_wall)
+        
         self.pixels_per_foot =  2.8088
         self.pixels_per_step = self.pixels_per_foot * 2.5
     
-         ## Fonts     
+        ## Fonts
         self.font12 = pygame.font.SysFont('Arial', 12) 
         self.font15 = pygame.font.SysFont('Arial', 15) #pygame.font.Font('freesansbold.ttf', 15)
         self.font20 = pygame.font.SysFont('Arial', 18)
-    
-    
+
+ 
     """ NEW FUNCTIONS FROM ANGRY BATS """ 
     def get_total_time_seconds(self, start_time_ms): 
         current_time = pygame.time.get_ticks()
@@ -77,4 +81,13 @@ class Helpers:
         return theta_rad
     
     
+    def get_ball_theta_deg(self, ball_coord):
+        centroid = self.setup.boundaries['four_B_tip']
+        
+        theta_rad = self.coord_to_theta(centroid, ball_coord)
+        theta_deg = math.degrees(theta_rad)
+        
+        return theta_deg
+        
+        
 # Last line

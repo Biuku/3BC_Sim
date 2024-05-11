@@ -38,7 +38,7 @@ class BallHelpers:
 
      
     #### Functions ####
-        
+
     def update_kpi_metrics(self, master_z, coord_3D_pg):
         self.master_z = master_z
         self.coord_3D_pg = coord_3D_pg
@@ -55,10 +55,11 @@ class BallHelpers:
             self.update_velo_mph()
             self.update_2D_distance_from_home_feet()
             self.update_height()
-        
+
         packaged_returnable = {"velo": self.curr_velo_mph, "distance": self.curr_distance_from_home_feet, "height": self.curr_height_feet, "max height":  self.max_height_feet}
-        
+
         return packaged_returnable
+
 
     ## Velocity in 3 directions
     def update_velo_mph(self): 
@@ -81,7 +82,6 @@ class BallHelpers:
     def update_height(self):
         self.curr_height_feet = self.master_z / self.setup.pixels_per_foot
         self.max_height_feet = max(self.max_height_feet, self.curr_height_feet)
-
 
 
     ## something I used to help configure bounces off the OF wall 
