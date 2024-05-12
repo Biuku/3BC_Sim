@@ -94,7 +94,7 @@ class Baserunner(Man):
         def update_base_attained(self):
             
             ## Cannot attain a base unless you've obtained all preceding bases
-            base_attained = False
+            base_attained = 0
             
             if self.base_collided_with == 1:
                 base_attained = 1

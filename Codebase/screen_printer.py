@@ -32,30 +32,43 @@ class ScreenPrinter:
     def write_text_onScreen(self, general, ball_metrics, ball_inputs):
 
         ### PREP
-        self.draw_demarcation_line()
+        self.draw_major_vertical_demarcation_line()
         self.new_frame() ## Reset y for start row of printing on screen
 
         ### STATIC INSTRUCTIONS
         self.print_simple( [ "INSTRUCTIONS", "", "" ] )
-        self.print_simple( [ "Show Boundary markers: B", "", "" ] )
-        self.print_simple( [ "Show Defensive Situation markers: N", "", "" ] )
-        self.print_simple( [ "Advance the baserunner: 'r' ", "", "" ] )
-        self.print_simple( [ "Press 'SPACE' to launch a baseball", "", "" ] )
-        self.print_simple( [ "Right-click to drop the baseball", "", "" ] )
+        self.print_simple( [ "Show boundary markers: b", "", "" ] )
+        self.print_simple( [ "Show defensive coords: n", "", "" ] )
+        self.print_simple( [ "Advance baserunner: 'r' ", "", "" ] )
+        self.print_simple( [ "Launch baseball: 'SPACE'", "", "" ] )
         self.paragraph_break()
         
+        self.print_simple( [ "Drop baseball: k", "", "" ] )
+        self.print_simple( [ "Throw ball: h", "", "" ] )
+        self.print_simple( [ "Change throw target: j", "", "" ] )
+
+
+        
+        self.draw_minor_separation_line ()
+         
         self.print_simple( ["Select a Defensive Situation:", "", "" ] )
-        self.print_simple_tabbed( ["- Press 'L' to reset situations", "", "" ] )
-        self.print_simple_tabbed( ["- Press 'ENTER' to activate current situation", "", "" ] )   
+        self.print_simple_tabbed( ["- Reset situation: L", "", "" ] )
+        self.print_simple_tabbed( ["- Activate current situation: 'ENTER'", "", "" ] ) 
         
         ## User input  
         self.print_user_input( ["You pressed:", general['defensive_sit'], general['defensive_sit_text'] ] )
-        self.paragraph_break()
+        self.draw_minor_separation_line ()
 
         ## Baseball status  
         self.print_simple( ["BASES:", "", ""] )
         self.print_simple( ["Base attained:", general['base_attained'], ""] )
-        self.paragraph_break()
+        self.draw_minor_separation_line ()
+        
+        ## Throwing  
+        self.print_simple( ["THROWING:", "", ""] )
+        self.print_simple( ["Fielder with the ball:", general['fielder with ball'], ""] )
+        self.print_simple( ["Target of throw:", general['throw receiver'], ""] )
+        self.draw_minor_separation_line ()
 
         self.print_simple( ["BALL LOCATION:", "", ""] )
         self.print_simple( [ "Ball location on the field: ", "", general['ball_loc_field'] ] )
@@ -65,29 +78,19 @@ class ScreenPrinter:
         #self.print_int( ["Ball 2D distance from Home:", ball_metrics["ball_distance_Home"], "'"])
         #self.print_int( ["Ball velocity in 3D:", ball_metrics["ball_velo"], " mph"])
         #self.print_coord( ["Ball 2D coord:", ball_metrics["ball_coord"], ""])
-        self.paragraph_break()
-        self.paragraph_break()
+        self.draw_minor_separation_line ()
                 
         #self.print_simple( ["Ball launched:", ball_metrics["launched_toggle"], " "] )
-        self.print_simple( ["Ball rolling", ball_metrics["rolling_toggle"], " "] )
-        self.print_simple( ["# bounces", ball_metrics["num_bounces"], " "] )
-        self.paragraph_break()
-        self.paragraph_break()
+        self.print_simple( ["Ball rolling: ", ball_metrics["rolling_toggle"], " "] )
+        self.print_simple( ["# bounces: ", ball_metrics["num_bounces"], " "] )
+        self.draw_minor_separation_line ()
         
         self.print_simple( ["BALL LAUNCH (WASD: ", "", ""] )
         self.print_simple( ["Exit velo (a-d): ", ball_inputs["exit_velo"], " mph"] )
         self.print_simple( ["Launch angle (w-s)", ball_inputs["launch_angle"], "°"] )
-        self.print_simple( ["Launch direction (z-x): ", ball_inputs["launch_direction"], "°"] )
+        self.print_rounded( [ "Launch direction (z-x): ", ball_inputs["launch_direction"], "°"], 1)
         self.paragraph_break()
 
-
-    def prep_screen_data(self):
-        if self.curr_defensiveSit in self.defensiveSit_plays:
-            self.current_defensiveSit_text = self.defensiveSit_plays[self.curr_defensiveSit][0]
-    
-        base_attained = self.baserunner.get_base_attained()        
-        if base_attained > 0:
-            self.base_attained_text = str(base_attained) + "B" 
 
 
     def new_frame(self):
@@ -165,11 +168,23 @@ class ScreenPrinter:
 
 
     ## Draw a line between the playing field and the user input space
-    def draw_demarcation_line(self):
+    
+    def draw_minor_separation_line(self):
+        
+        self.y += 25
+        x_end = self.x + 400
+        thickness = 2
+        
+        pygame.draw.line(self.screen, 'grey', (self.x, self.y), (x_end, self.y), thickness)
+        
+        self.y += 25
+
+    
+    def draw_major_vertical_demarcation_line(self):
         h = self.screen.get_height()
         
         pixels_to_end_of_playing_field = 128
-        x = self.x - pixels_to_end_of_playing_field 
+        x = self.x - pixels_to_end_of_playing_field
         
         pygame.draw.line(self.screen, 'grey', (x, 0), (x, h), 5)
 

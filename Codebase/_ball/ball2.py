@@ -88,16 +88,23 @@ class Ball:
 
         """   UPDATE START DATA HERE   """
 
-        self.launch_velo_mph = 80 # MPH
-        self.launch_angle_deg = self.master_launch_angle_deg = 20 # degrees 
-        self.launch_direction_deg = self.master_launch_direction_deg = 80 ## 90 = straight at 2B | 135 = 3B | 45 = 1B 
+        self.launch_velo_mph = 70 # MPH
+        self.launch_angle_deg = self.master_launch_angle_deg = 35 # degrees 
+        self.launch_direction_deg = self.master_launch_direction_deg = 90 ## 90 = straight at 2B | 135 = 3B | 45 = 1B 
 
         """   ^^^^^^^^^^^^  """
 
 
     #### Functions ####
-    def launch_ball(self):
+    
+    def batted_launch(self):
         self.reset_play()
+        
+        self.thrown_launch()
+        
+    
+    def thrown_launch(self):
+        self.end_launch()
         
         self.launched_toggle = True
         self.super_OF_wall_toggle = True
@@ -277,17 +284,20 @@ class Ball:
             self.velocity_x_pg = 0
             self.velocity_y_pg = 0
             self.velocity_z_pg = 0
+            
+            self.bounce_count = 0
 
 
         def reset_play(self):
+            
             self.end_launch()
             
             self.master_x = self.setup.four_B_tip[0]
             self.master_y = self.setup.four_B_tip[1]
             self.master_z = 3*2.8 # 3' off the ground
             
-            self.bounce_count = 0
             self.max_height_feet = 0
+
 
 
         def draw_ball(self): 
@@ -301,17 +311,24 @@ class Ball:
 
     for update_metrics in range(1):
 
-        def receive_launch_data(self, launch_metrics):
-            ticks = pygame.time.get_ticks()  ## Number of miliseconds since pygame.init() called
+        # Modify launch data -- for user updates to contact settings 
+        def receive_launch_deltas(self, launch_metrics):
+
+            self.launch_velo_mph += launch_metrics['exit_velo']
+            self.launch_angle_deg += launch_metrics['launch_angle']
+            self.launch_direction_deg += launch_metrics['launch_direction']
+                
+            self.update_for_user_inputs()
             
-            if ticks - self.prev_ticks > 30:  ## 0.04 seconds delay between updates
-                self.prev_ticks = ticks
+            
+        # Replace current launch data -- for throws
+        def receive_new_launch_deta(self, launch_metrics):
+
+            self.launch_velo_mph = launch_metrics['exit_velo']
+            self.launch_angle_deg = launch_metrics['launch_angle']
+            self.launch_direction_deg = launch_metrics['launch_direction']
                 
-                self.launch_velo_mph += launch_metrics['exit_velo']
-                self.launch_angle_deg += launch_metrics['launch_angle']
-                self.launch_direction_deg += launch_metrics['launch_direction']
-                
-                self.update_for_user_inputs()
+            self.update_for_user_inputs()
 
 
         def update_for_user_inputs(self):
@@ -321,7 +338,7 @@ class Ball:
             
             ### Tracer to show the launch angle with a line 
             start = self.setup.base_centroids[4]
-            end = self.helpers.theta_to_endCoord(start, self.launch_direction_deg, 100)
+            end = self.helpers.theta_to_endCoord(start, self.launch_direction_deg, 50)
             pygame.draw.line(self.screen, 'grey', start, end, 2)
 
 

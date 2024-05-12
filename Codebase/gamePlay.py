@@ -37,39 +37,55 @@ class GamePlay:
             self.fielder_objects = self.gp_helpers.make_fielders(Fielder) 
             self.baserunner = self.gp_helpers.make_baserunners(Baserunner) 
             self.bases_attained = {1: False, 2: False, 3: False, 4: False}
-        
+            self.throw_receiver = None
+
+
         for game_status_and_toggles in range(1):
+            
             self.curr_defensive_play_ID = 0
             self.current_defensiveSit_text = ""
             self.base_attained_text = ""
             self.ball_location_text = ""
+            self.throw_receiver_id_text = ""
+            self.fielder_with_ball_text = ""
             
             self.situation_start_toggle = False
             self.situation_live_ball_toggle = False ## Only True from batted ball to end of play 
+            
+            self.ball_launched_toggle = False
+            self.throw_toggle = False
+            self.ball_exchange_toggle = False
+            self.ball_catch_time = 0
+            self.ball_exchange_duration = 0.5 * 1000 ## 0.5 seconds delay from receiving a ball to being ready to throw it
+
 
         for ball_related in range(1):
-            self.prev_ticks = 0         
-            self.fielder_with_ball = None
-            
+            self.curr_fielder_with_ball = None
+            self.prev_fielder_with_ball = None
 
-    for do_game_situation in range(1):
-                
-        def master_situation_control(self, left, right, north, south, mouse_drag_ball_toggle):
-            
-            if self.situation_start_toggle:
-                if self.curr_defensive_play_ID in self.setup.defensive_plays:
-                    self.start_situation()
 
-            self.update_man_collisions()
-            self.move_and_draw_fielders(left, right, north, south)
-            self.move_and_draw_baserunners()
-            
-            self.move_ball_with_fielder_if()
-            self.move_ball(mouse_drag_ball_toggle)
-            self.ball.draw_ball()
-
-            self.data_to_printScreen()
+    def master_situation_control(self, left, right, north, south, mouse_drag_ball_toggle):
         
+        if self.situation_start_toggle:
+            if self.curr_defensive_play_ID in self.setup.defensive_plays:
+                self.start_situation()
+
+        self.update_ball_exchange()
+
+        self.update_man_collisions()
+        self.move_and_draw_fielders(left, right, north, south)
+        self.move_and_draw_baserunners()
+        
+        if not self.throw_toggle:
+            self.move_ball_with_fielder_if()
+        
+        self.move_ball(mouse_drag_ball_toggle)
+        self.ball.draw_ball()
+
+        self.data_to_printScreen()
+            
+            
+    for do_game_situation in range(1): 
     
         def start_situation(self):  
 
@@ -126,18 +142,19 @@ class GamePlay:
             def reset_baserunners(self):
                 self.baserunner = self.make_baserunners()
 
-
-    #### Ball Functions 
-    # Ball movement | Ball launch and drop ball
     
+    #### Ball Functions: Ball movement | Ball launch and drop ball
     for update_ball in range(1):
 
         ### Ball movement
          
         def move_ball(self, mouse_drag_ball_toggle):
             
+            #print(f"In 'move_ball', throw-toggle: {self.throw_toggle} ")
+            
             if mouse_drag_ball_toggle:
-                self.fielder_with_ball = None
+                self.curr_fielder_with_ball = None
+                self.prev_fielder_with_ball = None
                 self.ball.end_launch()
                 self.ball.mouse_drag_ball()
                 
@@ -147,29 +164,108 @@ class GamePlay:
         
         def move_ball_with_fielder_if(self):
         
-            if self.fielder_with_ball:   
-                x, y = self.fielder_with_ball.agnostic_pos
+            if self.curr_fielder_with_ball:   
+                x, y = self.curr_fielder_with_ball.agnostic_pos
                 self.ball.update_coord_for_situation( (x, y) )
-                
-                
+
+
         ### Ball launch and drop ball
 
         ## Pass-through from main > get events 
-        def send_launch_data_to_ball(self, launch_metrics_deltas):
-            self.ball.receive_launch_data(launch_metrics_deltas)
+        def send_launch_deltas_to_ball(self, launch_metrics_deltas):
+            self.ball.receive_launch_deltas(launch_metrics_deltas)
+            
+        ## When a ball is throw, tell the ball its goal
+        def send_launch_data_to_ball(self, direction_deg):
+            
+            throw_velo_mph = 65
+            launch_angle_deg = 15
+            
+            launch_metrics = {
+                "exit_velo": throw_velo_mph,
+                "launch_angle": launch_angle_deg,
+                "launch_direction": direction_deg,
+                    }
+            
+            self.ball.receive_new_launch_deta(launch_metrics)
 
 
         # Pass-through from main > get events 
-        def launch_ball(self):
-            self.fielder_with_ball = None
-            self.ball.launch_ball()
+        def batted_launch(self):
+            self.curr_fielder_with_ball = None
+            self.ball_launched_toggle = True
+            self.ball.batted_launch()
             
         
         ## Called directly from main > get events 
         def drop_ball(self):
-            if self.fielder_with_ball:
-                self.fielder_with_ball = None
+            if self.curr_fielder_with_ball:
+                self.curr_fielder_with_ball = None
+                self.prev_fielder_with_ball = None
                 self.ball.fielder_drop_the_ball()
+
+
+    # Ball throwing 
+    for throwing in range(1):
+
+        def throw_ball(self):
+            
+            ## Cannot throw the ball if a) No fielder has teh ball, b) The fielder caught it less than 0.5s ago
+            if not self.curr_fielder_with_ball or self.ball_exchange_toggle:
+                return
+
+            self.throw_toggle = True
+            print(f"In 'throw ball', throw_toggle is: {self.throw_toggle} ")
+
+            if not self.throw_receiver:
+                self.change_throw_receiver()
+
+            self.ball_launched_toggle = True
+            
+            self.curr_fielder_with_ball.update_ball_possession(False, False)
+            
+            self.curr_fielder_with_ball = None ## Prev_fielder_with_ball remains 
+            
+            
+            self.ball.thrown_launch()
+            
+            
+        def update_ball_exchange(self):
+            time_since_catch = pygame.time.get_ticks() - self.ball_catch_time
+            
+            if time_since_catch >= self.ball_exchange_duration:
+                self.ball_exchange_toggle = False
+                
+                if self.curr_fielder_with_ball:
+                    self.curr_fielder_with_ball.update_ball_possession(True, False)  ## Possession = True, Exchange = False 
+
+
+        def change_throw_receiver(self):
+            
+            if not self.curr_fielder_with_ball:
+                return
+            
+            ## If there isn't one, pick the best one
+            if not self.throw_receiver:
+                self.throw_receiver = self.fielder_objects[4] ## Start with F4 for now... later, get more sophisticated with who should receive the throw
+                self.fielder_objects[4].update_throw_receiver(True)
+                print(f" Throw receiver should be 4: {self.throw_receiver.get_id()} ")
+
+            else:
+                receiver = self.throw_receiver.get_id()
+                receiver += 1
+
+                if receiver > 9:
+                    receiver = 1
+
+                self.throw_receiver.update_throw_receiver(False)
+                self.throw_receiver = self.fielder_objects[receiver]
+                self.throw_receiver.update_throw_receiver(True)
+
+                print(f" Throw receiver is... {self.throw_receiver.get_id()} ")
+
+            theta = self.gp_helpers.get_throw_theta(self.curr_fielder_with_ball, self.throw_receiver)
+            self.send_launch_data_to_ball(theta)
 
 
     #### Man Functions
@@ -182,7 +278,8 @@ class GamePlay:
             for fielder in self.fielder_objects.values():
                 fielder.check_base_collision()
                 
-                if self.ball.curr_height_feet < 7 and not self.fielder_with_ball:
+                if self.ball.curr_height_feet < 7 and not self.curr_fielder_with_ball:
+                                        
                     self.check_fielder_gets_ball(fielder)
                 
             self.baserunner.detect_collisions(self.fielder_objects)
@@ -194,8 +291,26 @@ class GamePlay:
             distance_pg = self.helpers.measure_distance_in_pixels( fielder.get_centre_coord(), self.get_ball_coord() )
             
             if distance_pg < self.setup.ball_catch_proximity:
-                self.fielder_with_ball = fielder
-                self.ball.end_launch()
+                
+                if fielder != self.prev_fielder_with_ball:
+                    
+                    self.curr_fielder_with_ball = fielder
+                    self.prev_fielder_with_ball = fielder
+                    
+                    self.ball_exchange_toggle = True  # Start ball exchange
+                    self.curr_fielder_with_ball.update_ball_possession(True, True) # possession = True, exchange = True
+                    self.ball_catch_time = pygame.time.get_ticks() 
+
+                    if self.throw_receiver:
+
+                        ## Tag the throw as complete -- throw receiver is no longer trying to catch the throw
+                        self.throw_receiver.update_throw_receiver(False)
+                        self.throw_receiver = None
+                        self.throw_toggle = False
+                        print(f" In check_fielder_gets_ball, throw_toggle is: {self.throw_toggle}" )
+                
+                    self.ball.end_launch()
+
 
         ### Move and draw 'men'
         
@@ -206,13 +321,11 @@ class GamePlay:
                 if not fielder.get_goal(): 
                     fielder.move_man(left, right, north, south) ## This overrides the goal-setting animation unless only called when no goal 
                 
-                #fielder.draw_fielder()
                 fielder.draw_man()
    
    
         def move_and_draw_baserunners(self): # left, right, north, south
             self.baserunner.move_baserunner() 
-            #self.baserunner.draw_baserunner()
             self.baserunner.draw_man()
 
 
@@ -237,36 +350,59 @@ class GamePlay:
 
 
     for send_data_to_printScreen in range(1):
-        
+
         def data_to_printScreen(self):
-            
+
             self.prep_screen_data()
-            
+
             general_screen_text = {
                 "defensive_sit": self.curr_defensive_play_ID,
                 "defensive_sit_text": self.current_defensiveSit_text,
                 "base_attained": self.base_attained_text,
                 "ball_loc_field": self.ball_location_text,
+                "fielder with ball": self.fielder_with_ball_text,
+                "throw receiver": self.throw_receiver_id_text
             }
-            
+
             ball_metrics_screen_text = self.ball.package_data_objects()
-             
+
             ball_inputs_screen_text = {
                 "exit_velo": self.ball.launch_velo_mph,
                 "launch_angle": self.ball.launch_angle_deg,
                 "launch_direction": self.ball.launch_direction_deg,        
             }
-            
+
             self.screenPrinter.write_text_onScreen(general_screen_text, ball_metrics_screen_text, ball_inputs_screen_text)
-            
+
 
         def prep_screen_data(self):
+            
             if self.curr_defensive_play_ID in self.setup.defensive_plays:
                 self.current_defensiveSit_text = self.setup.defensive_plays[self.curr_defensive_play_ID][0]
         
+            ## Get the ID of the player with the ball (if any)
+            if self.curr_fielder_with_ball:
+                self.fielder_with_ball_text = self.curr_fielder_with_ball.get_id()
+            
+            else:
+                self.fielder_with_ball_text = None
+                
+        
+            ## Get the ID of the target of the throw (if any)
+            if not self.throw_receiver:
+                self.throw_receiver_id_text = None
+                
+            else:
+                self.throw_receiver_id_text = self.throw_receiver.get_id()
+        
+            ## Highest base attained
             base_attained = self.baserunner.get_base_attained()        
+            
             if base_attained > 0:
                 self.base_attained_text = str(base_attained) + "B" 
+                
+            else:
+                self.base_attained_text = "None"
                 
             self.ball_location_text = self.gp_helpers.interpret_ball_location( self.get_ball_coord() )
 

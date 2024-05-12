@@ -20,12 +20,17 @@ class Fielder(Man):
     def __init__(self, screen, pos, id):
 
         super().__init__(screen, pos, id, 'fielder') #Inheret all Mankind
-        
+
         self.man_helpers = ManHelpers(screen, self.man_speed)
-        
+
         self.screen = screen
         self.goal_coord = (0,0)
         self.base_collided_with = None
+
+        self.ball_possession_toggle = False
+        self.ball_exchange_toggle = False
+        self.throw_receiver_toggle = False
+
 
 
     #### MAIN FUNCTIONS
@@ -52,25 +57,44 @@ class Fielder(Man):
                     
                 self.goal = self.man_helpers.check_end_goal_move() # Keep running till centred on the base
 
-        
+
     # Detect collisions #One for fielders, one for baserunners
     def check_base_collision(self):
-     
+
         # Need to set collision to True if it collides with even 1 base
-        
         self.base_collided_with = self.man_helpers.detect_base_collisions(self.man_rect) # Return None if no base collision 
         self.update_for_collision_status() 
 
-    
-    def update_for_collision_status(self):
 
-            if self.base_collided_with:    
+    def update_for_collision_status(self):
+        
+            if self.throw_receiver_toggle:
                 self.rect_thickness = 4
-                self.rect_colour = 'red' 
+                self.rect_colour = 'blue'
+
+            elif self.ball_exchange_toggle:
+                self.rect_thickness = 2
+                self.rect_colour = 'black'
+
+            elif self.ball_possession_toggle:
+                self.rect_thickness = 4
+                self.rect_colour = 'grey'
+
+            elif self.base_collided_with:    
+                self.rect_thickness = 2
+                self.rect_colour = 'red'
                 
             else:
                 self.rect_thickness = 1
                 self.rect_colour = 'white' 
+                
+                
+    def update_throw_receiver(self, throw_receiver_toggle):
+        self.throw_receiver_toggle = throw_receiver_toggle
+        
+    def update_ball_possession(self, possession, exchange):
+        self.ball_possession_toggle = possession
+        self.ball_exchange_toggle = exchange 
 
 
 ## Last line

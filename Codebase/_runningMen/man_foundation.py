@@ -101,6 +101,8 @@ class Man:
         ### Meta attributes -- colours for boxes used during development
         self.rect_colour = 'white' 
         self.rect_thickness = 1
+        
+
  
 
     #### MAIN FUNCTIONS ####
@@ -118,40 +120,48 @@ class Man:
             self.frames_R = self.baserunner_frames_R 
             self.frames_N = self.baserunner_frames_N 
             
-            
-    def draw_man(self):
-            self.man_rect.x = self.agnostic_pos[0]
-            self.man_rect.y = self.agnostic_pos[1]
-            
-            if self.moving:
-                
-                ## Slow down the animation frame rate relative to overall fps
-                ticks = pygame.time.get_ticks()
-                if ticks - self.prev_ticks > self.animation_speed_ticks:
-                    self.prev_ticks = ticks
-                
-                    if self.direction_facing == 1:
-                        self.curr_frame = next(self.frames_L)
-
-                    elif self.direction_facing == 2:
-                        self.curr_frame = next(self.frames_R)
-                    
-                    elif self.direction_facing == 3:
-                        self.curr_frame = next(self.frames_N)
-                    
-            self.screen.blit(self.curr_frame, self.man_rect)
-            pygame.draw.rect(self.screen, self.rect_colour, self.man_rect, self.rect_thickness)
-            
-            ## Write fielder ID on fielder
-            x = self.man_rect.x + 16
-            y = self.man_rect.y + 42
-            
-            text = "F" + str(self.man_id)
-            
-            self.screenPrinter.draw_text(text, 'black', (x, y), self.setup.font12, 2)
- 
-
     for move_and_draw_man in range(1):
+                    
+        def draw_man(self):
+                self.man_rect.x = self.agnostic_pos[0]
+                self.man_rect.y = self.agnostic_pos[1]
+                
+                if self.moving:
+                    self.control_animation_speed()                    
+                  
+                self.screen.blit(self.curr_frame, self.man_rect)
+                pygame.draw.rect(self.screen, self.rect_colour, self.man_rect, self.rect_thickness)
+                
+                ## Write fielder ID on fielder
+                if self.type == 'fielder':
+
+                    x = self.man_rect.x + 16
+                    y = self.man_rect.y + 42
+                    
+                    text = "F" + str(self.man_id)
+                    
+                    self.screenPrinter.draw_text(text, 'black', (x, y), self.setup.font12, 2)
+    
+    
+        def control_animation_speed(self):
+            
+            ## Slow down the animation frame rate relative to overall fps
+            ticks = pygame.time.get_ticks()
+            
+            if ticks - self.prev_ticks > self.animation_speed_ticks:
+                self.prev_ticks = ticks
+            
+                if self.direction_facing == 1:
+                    self.curr_frame = next(self.frames_L)
+
+                elif self.direction_facing == 2:
+                    self.curr_frame = next(self.frames_R)
+                
+                elif self.direction_facing == 3:
+                    self.curr_frame = next(self.frames_N)
+
+    
+
  
         def move_man(self, left, right, north, south):
             
@@ -241,5 +251,9 @@ class Man:
         
         return (x, y)
         
+
+    def get_id(self):
+        return self.man_id
+
 
 # Last line

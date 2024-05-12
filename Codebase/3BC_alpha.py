@@ -43,11 +43,17 @@ show_defensiveSit_coord = False
 measuring_tape = False
 mouse_drag_ball_toggle = False
 
-### 0 = no change, -2 = down; 2 = up
-launch_metrics_deltas = {"exit_velo": 0,
-                  "launch_angle": 0,
-                  "launch_direction": 0
-                  }
+
+### Ball launch data
+for ball_launch_data_setup in range(1):
+    ### 0 = no change, -2 = down; 2 = up
+    launch_metrics_deltas = {
+        "exit_velo": 0,
+        "launch_angle": 0,
+        "launch_direction": 0,
+                    }
+
+    prev_ticks = 0
 
 
 """  KEYS to setup > coordinate dicts
@@ -116,6 +122,7 @@ for user_input_helpers in range(1):
     num_keys = [False] * 10 ## Keep track of multiple num keys pressed above the kb
     curr_defensiveSit = 0
     
+    
     def reset_numkeys(): 
         return [False] * 10
 
@@ -140,6 +147,18 @@ for user_input_helpers in range(1):
         gamePlay.update_curr_defensiveSit(curr_defensiveSit)
         
         return curr_defensiveSit
+
+
+    def control_ticks_for_launch_data(prev_ticks_, launch_metrics_deltas):
+        ticks = pygame.time.get_ticks()  ## Number of miliseconds since pygame.init() called
+       
+        if ticks - prev_ticks_ > .03 * 1000:  ## Seconds delay between updates
+            prev_ticks_ = ticks
+
+            gamePlay.send_launch_deltas_to_ball(launch_metrics_deltas)
+            
+        
+        return prev_ticks_
 
 
 for meta_functions in range(1):
@@ -250,37 +269,39 @@ while not exit:
             for start_movement in range(1):
                 if event.key == K_LEFT or event.key == K_KP4:
                     left = True
-                
+
                 if event.key == K_RIGHT or event.key == K_KP6:
                     right = True
-                    
+
                 if event.key == K_UP or event.key == K_KP8:
                     north = True
-                
+
                 if event.key == K_DOWN or event.key == K_KP2:
                     south = True
-                
-                
+
+
             ## Modify launch velo and angle 
             for modify_launch_metrics_deltas in range(1):
+                
+                delta = 1
 
                 if event.key == K_w:
-                    launch_metrics_deltas['launch_angle'] = 2
+                    launch_metrics_deltas['launch_angle'] = delta
 
                 if event.key == K_s:
-                    launch_metrics_deltas['launch_angle'] = -2
+                    launch_metrics_deltas['launch_angle'] = -delta
 
                 if event.key == K_d:
-                    launch_metrics_deltas['exit_velo'] = 2
+                    launch_metrics_deltas['exit_velo'] = delta
 
                 if event.key == K_a:
-                    launch_metrics_deltas['exit_velo'] = -2
+                    launch_metrics_deltas['exit_velo'] = -delta
 
                 if event.key == K_x:
-                    launch_metrics_deltas['launch_direction'] = -2
+                    launch_metrics_deltas['launch_direction'] = -delta
 
                 if event.key == K_z:
-                    launch_metrics_deltas['launch_direction'] = 2
+                    launch_metrics_deltas['launch_direction'] = delta
 
 
             ### Set up stuff
@@ -291,7 +312,7 @@ while not exit:
                     num_keys[i] = True
 
 
-            for reset_situations in range(1):
+            for modify_and_meta in range(1):
 
                 if event.key == K_l:
                     reset_numkeys()
@@ -311,12 +332,21 @@ while not exit:
                     measuring_tape = not(measuring_tape)
 
                 if event.key == K_SPACE:
-                    gamePlay.launch_ball()
+                    gamePlay.batted_launch()
 
                 if event.key == K_r:
                     gamePlay.advance_baserunner()
-                
-            
+
+                if event.key == K_k:
+                    gamePlay.drop_ball()
+                    
+                if event.key == K_h:
+                    gamePlay.throw_ball()
+
+                if event.key == K_j:
+                    gamePlay.change_throw_receiver()
+
+
         ## KEYUP
         if event.type == KEYUP:
             
@@ -365,7 +395,8 @@ while not exit:
     ## Pre-pitch things
     curr_defensiveSit = choose_situation(curr_defensiveSit)
     num_keys = reset_numkeys()
-    gamePlay.send_launch_data_to_ball(launch_metrics_deltas)
+    
+    prev_ticks = control_ticks_for_launch_data(prev_ticks, launch_metrics_deltas)
     
     ## Baseball situation exexition 
     gamePlay.master_situation_control(left, right, north, south, mouse_drag_ball_toggle)

@@ -15,13 +15,23 @@ pygame.init()
 class GameplayHelpers: 
     
     def __init__(self, screen):
-        
+
         self.setup = Setup() 
         self.helpers = Helpers()
         self.screen = screen
 
-     
+
     #### Functions ####
+
+    def get_throw_theta(self, thrower_object, receiver_object):
+
+        start_coord = thrower_object.get_centre_coord()
+        end_coord = receiver_object.get_centre_coord()
+
+        theta_rad = self.helpers.coord_to_theta(start_coord, end_coord)
+
+        return math.degrees(theta_rad)
+
 
     def interpret_ball_location(self, ball_coord):
     
@@ -40,16 +50,18 @@ class GameplayHelpers:
     
 
     def make_fielders(self, Fielder_object):
-        
+
         fielder_objects = {}
-            
+
         for fielder_id in [x for x in range(1, 10)]:
             coord = self.setup.fielder_standard_coord[fielder_id]                
             fielder_objects[fielder_id] = Fielder_object(self.screen, coord, fielder_id)
-            
+
         return fielder_objects
 
 
     def make_baserunners(self, Baserunner_object):
         r1 = 1
         return Baserunner_object(self.screen, r1)
+    
+# Last time
