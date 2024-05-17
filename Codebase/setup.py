@@ -43,13 +43,16 @@ class Setup:
             self.rf_foulPole_deg = 45
             self.cf_left_deg = 105
             self.cf_right_deg = 75
+            
+            # Ball depth
+            self.ball_depth_lookup = self.make_ball_depth_lookup()
 
 
         for field_positions in range(1):
             ## OF positions
-            self.mid_depth_OF = 550
+            self.mid_depth_OF = 550 + 100  ## After playing on May 7... it's clear we're not positioning half way to the fence under wood bats 
             self.LF = (550, self.mid_depth_OF)
-            self.CF = (self.x_centre_line, 350)
+            self.CF = (self.x_centre_line, self.mid_depth_OF - 150)
             self.RF = (1350, self.mid_depth_OF)
             
             ## INF coordinates
@@ -73,7 +76,7 @@ class Setup:
             self.ball_launch_z = self.top_of_floor - (4 * self.pixels_per_foot) ## 4'
 
         ## Collision constants
-        self.ball_catch_proximity = 25 ## How close the centre pixel of a fielder needs to be to the centre of the ball to pick up it 
+        self.ball_catch_proximity = 20 ## How close the centre pixel of a fielder needs to be to the centre of the ball to pick up it 
         
         ## Packaged coords
         self.boundaries = self.get_boundaries()
@@ -127,6 +130,7 @@ class Setup:
                         }
             
             return base_centroids
+
 
         def get_fielder_standard_coord(self):
             fielder_standard_coord = {}
@@ -291,7 +295,30 @@ class Setup:
             }
             
             return field_direction_thetas
-            
-            
-            
-             
+
+
+
+    ## A lookup table that matches the the max distances in feet from home to each of the 5 ball depth zones
+    def make_ball_depth_lookup(self):
+        
+        ball_depth_lookup = {
+            70: 1,
+            150: 2,
+            200: 3,
+            270: 4,
+            450: 5,
+        }
+        
+        return ball_depth_lookup
+    
+    
+    """
+     ball_depth_index = {
+            0: "N/A",
+            1: "Before mound",
+            2: "Base paths",
+            3: "Texas leaguer",
+            4: "Mid OF",
+            5: "Deep OF",
+        }
+    """

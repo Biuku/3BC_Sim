@@ -58,6 +58,13 @@ class ScreenPrinter:
         ## User input  
         self.print_user_input( ["You pressed:", general['defensive_sit'], general['defensive_sit_text'] ] )
         self.draw_minor_separation_line ()
+        
+        ## Launch metrics                
+        self.print_simple( ["BALL LAUNCH (WASD: ", "", ""] )
+        self.print_simple( ["Exit velo (a-d): ", ball_inputs["exit_velo"], " mph"] )
+        self.print_simple( ["Launch angle (w-s)", ball_inputs["launch_angle"], "°"] )
+        self.print_rounded( [ "Launch direction (z-x): ", ball_inputs["launch_direction"], "°"], 1)
+        self.draw_minor_separation_line ()
 
         ## Baseball status  
         self.print_simple( ["BASES:", "", ""] )
@@ -72,6 +79,8 @@ class ScreenPrinter:
 
         self.print_simple( ["BALL LOCATION:", "", ""] )
         self.print_simple( [ "Ball location on the field: ", "", general['ball_loc_field'] ] )
+        self.print_simple( [ "Ball depth: ", "", general['ball_depth'] ] )
+        
         self.print_int( ["Ball height:", ball_metrics["ball_height"], "' "] )
         #self.print_rounded( ["Max ball height:", ball_metrics["max_ball_height"], "' "], 1)
         #self.print_int( ["Ball height in pixels:", ball_metrics["ball_height_pixels"], " pixels"])
@@ -83,13 +92,8 @@ class ScreenPrinter:
         #self.print_simple( ["Ball launched:", ball_metrics["launched_toggle"], " "] )
         self.print_simple( ["Ball rolling: ", ball_metrics["rolling_toggle"], " "] )
         self.print_simple( ["# bounces: ", ball_metrics["num_bounces"], " "] )
-        self.draw_minor_separation_line ()
         
-        self.print_simple( ["BALL LAUNCH (WASD: ", "", ""] )
-        self.print_simple( ["Exit velo (a-d): ", ball_inputs["exit_velo"], " mph"] )
-        self.print_simple( ["Launch angle (w-s)", ball_inputs["launch_angle"], "°"] )
-        self.print_rounded( [ "Launch direction (z-x): ", ball_inputs["launch_direction"], "°"], 1)
-        self.paragraph_break()
+
 
 
 

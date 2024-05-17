@@ -101,9 +101,7 @@ class Man:
         ### Meta attributes -- colours for boxes used during development
         self.rect_colour = 'white' 
         self.rect_thickness = 1
-        
-
- 
+        self.draw_rect = True
 
     #### MAIN FUNCTIONS ####
     
@@ -130,7 +128,9 @@ class Man:
                     self.control_animation_speed()                    
                   
                 self.screen.blit(self.curr_frame, self.man_rect)
-                pygame.draw.rect(self.screen, self.rect_colour, self.man_rect, self.rect_thickness)
+                
+                if self.draw_rect:
+                    pygame.draw.rect(self.screen, self.rect_colour, self.man_rect, self.rect_thickness)
                 
                 ## Write fielder ID on fielder
                 if self.type == 'fielder':
@@ -160,10 +160,9 @@ class Man:
                 elif self.direction_facing == 3:
                     self.curr_frame = next(self.frames_N)
 
-    
 
- 
-        def move_man(self, left, right, north, south):
+        def move_man(self, keyboard_arrow_input):
+            left, right, north, south = keyboard_arrow_input
             
             ## Only advance the animation when moving
             self.moving = False       

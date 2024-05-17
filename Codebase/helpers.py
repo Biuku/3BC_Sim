@@ -13,13 +13,14 @@ pygame.init()
 
 
 class Helpers:
-    
+
     def __init__(self):
         
         self.setup = Setup()
         self.main_centroid_radius = self.measure_distance_in_pixels(self.setup.main_centroid,  self.setup.cf_wall)
         
         self.pixels_per_foot =  2.8088
+        self.feet_per_pixel = 1 / self.pixels_per_foot
         self.pixels_per_step = self.pixels_per_foot * 2.5
     
         ## Fonts
@@ -27,21 +28,15 @@ class Helpers:
         self.font15 = pygame.font.SysFont('Arial', 15) #pygame.font.Font('freesansbold.ttf', 15)
         self.font20 = pygame.font.SysFont('Arial', 18)
 
- 
-    """ NEW FUNCTIONS FROM ANGRY BATS """ 
-    def get_total_time_seconds(self, start_time_ms): 
-        current_time = pygame.time.get_ticks()
-        total_time_seconds = (current_time - start_time_ms) / 1000
-        
-        return total_time_seconds
-    
-    
+
     ## Utility function to convert a line between two points into a distance in feet
-    def measure_distance_in_feet(self, start_pos, end_pos):
-        distance_in_pixels = self.measure_distance_in_pixels(start_pos, end_pos)
+    def measure_distance_in_feet(self, start_coord, end_coord):
+        
+        distance_in_pixels = self.measure_distance_in_pixels(start_coord, end_coord)
+        
         return distance_in_pixels / self.pixels_per_foot  
-    
-    
+
+
     def measure_distance_in_pixels(self, start_pos, end_pos):
         distance_in_pixels = math.sqrt( ( end_pos[0] - start_pos[0] )**2  +  ( end_pos[1] - start_pos[1] )**2 )
         return distance_in_pixels 
@@ -69,7 +64,7 @@ class Helpers:
         
         return (end_x, end_y)
 
-    
+
     def coord_to_theta(self, start_coord, end_coord):
         adj = dx = end_coord[0] - start_coord[0]
         opp = dy = -1 * (end_coord[1] - start_coord[1]) # -1 *    # Negative because Pygame Y axis
@@ -79,8 +74,8 @@ class Helpers:
         theta_rad = math.atan2(opp, adj) # Got this formula from Chat GPT... I don't really understand trig well enough to know it intuitively
         
         return theta_rad
-    
-    
+
+
     def get_ball_theta_deg(self, ball_coord):
         centroid = self.setup.boundaries['four_B_tip']
         
@@ -88,6 +83,17 @@ class Helpers:
         theta_deg = math.degrees(theta_rad)
         
         return theta_deg
+
+
+
+
+    ## Not sure I still use these
+
+    def get_total_time_seconds(self, start_time_ms): 
+        current_time = pygame.time.get_ticks()
+        total_time_seconds = (current_time - start_time_ms) / 1000
         
-        
+        return total_time_seconds
+
+
 # Last line

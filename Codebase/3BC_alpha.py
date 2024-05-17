@@ -7,7 +7,7 @@ from pygame.locals import *
 import math
 
 from setup import Setup
-from gamePlay import GamePlay
+from gameplay.gamePlay import GamePlay
 from helpers import Helpers
 from screen_printer import ScreenPrinter
 
@@ -46,7 +46,7 @@ mouse_drag_ball_toggle = False
 
 ### Ball launch data
 for ball_launch_data_setup in range(1):
-    ### 0 = no change, -2 = down; 2 = up
+    
     launch_metrics_deltas = {
         "exit_velo": 0,
         "launch_angle": 0,
@@ -162,7 +162,7 @@ for user_input_helpers in range(1):
 
 
 for meta_functions in range(1):
-    
+
     def draw_boundary_markers():
         boundary_marker_size = 7
         ring_size = 5
@@ -178,16 +178,34 @@ for meta_functions in range(1):
         # Mark 9 standard defensive positions   
         for coord in setup.fielder_standard_coord.values():        
             pygame.draw.circle(screen, 'blue', coord, 8, 3)
-        
+
         ## Demarcate LF-CF-RF in blue
         centroid = setup.boundaries['four_B_tip']
         dist_pixels = helpers.measure_distance_in_pixels(centroid, setup.boundaries['cf_wall']) 
-        
+
         CF_left_end = helpers.theta_to_endCoord(centroid, setup.boundary_thetas['cf_left_deg'], dist_pixels)
         CF_right_end = helpers.theta_to_endCoord(centroid, setup.boundary_thetas['cf_right_deg'], dist_pixels)
-        
+
         pygame.draw.line(screen, 'blue', centroid, CF_left_end, 2)
         pygame.draw.line(screen, 'blue', centroid, CF_right_end, 2)
+
+        draw_ball_depth_perimeters()
+
+
+    def draw_ball_depth_perimeters():
+
+        centroid = setup.four_B_tip
+        
+        # Use main centroid    
+        #centroid = setup.main_centroid
+        #main_centroid_to_home_y = abs( setup.main_centroid[1] - setup.four_B_tip[1] )
+        
+        for radius in setup.ball_depth_lookup:
+            
+            radius *= setup.pixels_per_foot # Convert to pixels
+            radius += 0 #main_centroid_to_home_y # The lookup is based on distance from Home. Adjust if using main_centroid as the centre 
+            
+            pygame.draw.circle(screen, 'blue', centroid, radius, 2)
 
 
     ## Draw situational positions       
@@ -393,13 +411,17 @@ while not exit:
             draw_measuring_tape()
 
     ## Pre-pitch things
+    for package_gameplay_updates in range(1):
+        keyboard_input = [left, right, north, south] 
+        gamePlay.packaged_updates(keyboard_input, mouse_drag_ball_toggle)
+    
     curr_defensiveSit = choose_situation(curr_defensiveSit)
     num_keys = reset_numkeys()
     
     prev_ticks = control_ticks_for_launch_data(prev_ticks, launch_metrics_deltas)
     
-    ## Baseball situation exexition 
-    gamePlay.master_situation_control(left, right, north, south, mouse_drag_ball_toggle)
+    ## Baseball situation execition 
+    gamePlay.master_gameplay_control()
 
 
     pygame.display.update() 

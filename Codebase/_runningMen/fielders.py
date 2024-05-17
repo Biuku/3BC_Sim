@@ -67,26 +67,30 @@ class Fielder(Man):
 
 
     def update_for_collision_status(self):
-        
+
+            self.draw_rect = True
+            
             if self.throw_receiver_toggle:
-                self.rect_thickness = 4
+                self.rect_thickness = 3
                 self.rect_colour = 'blue'
 
             elif self.ball_exchange_toggle:
-                self.rect_thickness = 2
+                self.rect_thickness = 3
                 self.rect_colour = 'black'
 
             elif self.ball_possession_toggle:
-                self.rect_thickness = 4
+                self.rect_thickness = 2
                 self.rect_colour = 'grey'
 
             elif self.base_collided_with:    
-                self.rect_thickness = 2
+                self.rect_thickness = 3
                 self.rect_colour = 'red'
-                
+            
+            ## Else, display the 'nothing special' thing
             else:
-                self.rect_thickness = 1
-                self.rect_colour = 'white' 
+                self.draw_rect = False
+                #self.rect_thickness = 1
+                #self.rect_colour = 'white' 
                 
                 
     def update_throw_receiver(self, throw_receiver_toggle):

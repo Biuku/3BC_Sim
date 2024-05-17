@@ -299,7 +299,6 @@ class Ball:
             self.max_height_feet = 0
 
 
-
         def draw_ball(self): 
 
             self.shadow.update_shadow(self.curr_height_feet, self.coord_2D_pg)
@@ -322,11 +321,11 @@ class Ball:
             
             
         # Replace current launch data -- for throws
-        def receive_new_launch_deta(self, launch_metrics):
+        def receive_throw_data(self, throw_metrics):
 
-            self.launch_velo_mph = launch_metrics['exit_velo']
-            self.launch_angle_deg = launch_metrics['launch_angle']
-            self.launch_direction_deg = launch_metrics['launch_direction']
+            self.launch_velo_mph = throw_metrics['exit_velo']
+            self.launch_angle_deg = throw_metrics['launch_angle']
+            self.launch_direction_deg = throw_metrics['launch_direction']
                 
             self.update_for_user_inputs()
 
@@ -374,6 +373,21 @@ class Ball:
                 "num_bounces": self.bounce_count,
             }
 
-        return ball_metrics_screen_text
+        ball_launch_data_text = {
+                "exit_velo": self.launch_velo_mph,
+                "launch_angle": self.launch_angle_deg,
+                "launch_direction": self.launch_direction_deg,
+            }
+        
+        return ball_metrics_screen_text, ball_launch_data_text
+
+
+    for pulls in range(1): 
+
+        def get_ball_coord_2D_pg(self):
+            return self.coord_2D_pg
+        
+        def get_curr_height_feet(self):
+            return self.curr_height_feet
 
 # Last line
