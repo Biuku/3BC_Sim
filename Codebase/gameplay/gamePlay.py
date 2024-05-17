@@ -62,9 +62,6 @@ class GamePlay:
             ## General
             self.ball_coord_2D_pg = None
 
-            ## Throw
-            self.throw_toggle = False
-
             ## Ball exchange
             self.ball_exchange_toggle = False
             self.ball_catch_timeStamp = 0
@@ -90,98 +87,51 @@ class GamePlay:
 
         ## Fielders and baserunners
         self.update_man_collisions()
-        self.move_and_draw_fielders()
-        self.move_and_draw_baserunners()
+        self.gp_helpers.move_and_draw_fielders(self.fielder_objects, self.keyboard_arrow_input)
+        self.gp_helpers.move_and_draw_baserunners(self.baserunners)
         
         ## Ball
         self.update_ball_exchange()
-        self.move_ball_with_fielder()
-        self.move_ball()
+        
+        curr = self.curr_fielder_with_ball
+        prev = self.prev_fielder_with_ball    
+        self.curr_fielder_with_ball, self.prev_fielder_with_ball = self.gp_helpers.move_ball(self.ball, self.mouse_drag_ball_toggle, curr, prev )
+
+        #self.move_ball()
         self.ball.draw_ball()
 
         self.data_to_printScreen()
             
     
-    """ The whole gain situation initialization could be pushed down a level """
+
+    for start_game_situation in range(1): 
     
-    for do_game_situation in range(1): 
-    
+        
         def start_situation(self):
+            
+            ## self.situation_start_toggle is currently updated by main > get_events  
             
             if not self.situation_start_toggle:
                 return
             
             if self.curr_defensive_play_ID not in self.setup.defensive_plays:
                 return 
-    
+
+            self.drop_ball() ## If we're starting a new situation, let's start it cleanly
+
             defensive_assignments = self.setup.defensive_plays[self.curr_defensive_play_ID]
-            self.give_primary_defensive_assignments(defensive_assignments)  
-            self.give_secondary_defensive_assignments(defensive_assignments)  ## Assign goals to the other 7 defensive players
+            
+            self.fielder_objects, ball_new_coord = self.gp_helpers.give_primary_defensive_assignments(defensive_assignments, self.fielder_objects)
+            self.ball.update_coord_for_situation(ball_new_coord)
+                        
+            self.fielder_objects = self.gp_helpers.give_secondary_defensive_assignments(defensive_assignments, self.fielder_objects)  ## Assign goals to the other 7 defensive players
           
             self.situation_start_toggle = False
 
 
-        def give_primary_defensive_assignments(self, defensive_assignments):
-            
-            
-            ## For now, do in reverse -- place the ball relative to the guy assigned to field it 
-            ball_new_coord = self.meta_place_ball_for_situation(defensive_assignments)
-            backup_coord = ( ball_new_coord[0] - 70, ball_new_coord[1] - 70 )
-            
-            ## Assign 1 fielder to field the ball (#1), and 1 backup (#2)
-            self.fielder_objects[ defensive_assignments.index(1) ].assign_goal(ball_new_coord)
-            self.fielder_objects[ defensive_assignments.index(2) ].assign_goal(backup_coord)
-
-
-        def give_secondary_defensive_assignments(self, defensive_assignments):
-            for fielder_id, fielder_positioning_id in enumerate(defensive_assignments): 
-            
-                if fielder_positioning_id not in [1, 2] and isinstance(fielder_positioning_id, int): # In defensive_assignments, index 0 is a text description of the baseball situation  
-                        
-                    ## Assign each fielder coordinates representing standard positioning for this baseball situation
-                    fielder_goal = self.setup.defensiveSit_fielder_coord[fielder_positioning_id]
-                    self.fielder_objects[fielder_id].assign_goal(fielder_goal)  
-
-
-        ## Called from start_situation()
-        def meta_place_ball_for_situation(self, defensive_assignments): 
-            
-            primary_fielder = defensive_assignments.index(1)
-            x, y = self.setup.fielder_standard_coord[primary_fielder]
-            ball_new_coord = (x - 150, y - 150)
-            
-            self.ball.update_coord_for_situation(ball_new_coord)
-            
-            return ball_new_coord
-
-
     #### Ball Functions: Ball movement | Ball launch and drop ball
     for update_ball in range(1):
-
-        ### Ball movement
-
-        def move_ball(self):
-            
-            if self.mouse_drag_ball_toggle:
-                self.curr_fielder_with_ball = None
-                self.prev_fielder_with_ball = None
-                self.ball.end_launch()
-                self.ball.mouse_drag_ball()
-                
-            else:
-                self.ball.move_ball()
-
-
-        def move_ball_with_fielder(self):
-            
-            if not self.curr_fielder_with_ball:
-                return 
-
-            ## Get coord from fielder, send to ball
-            fielder_centre_coord = self.curr_fielder_with_ball.get_centre_coord()
-            self.ball.update_coord_for_situation( fielder_centre_coord )
-
-
+        
         ## Throws -- called whenever the throw receiver changes
         def send_throw_data_to_ball(self, direction_deg):
             
@@ -198,7 +148,7 @@ class GamePlay:
 
 
     # Ball throwing 
-    for throwing in range(1):
+    for throw in range(1):
 
         ## Called from 'master functional control'    
         def update_ball_exchange(self):
@@ -219,29 +169,13 @@ class GamePlay:
             
             if not self.curr_fielder_with_ball:
                 return
-            
-            ## If there isn't one, pick the best one
-            if not self.throw_receiver:
-                self.new_throw_receiver(4) # Default to 4 / second baseman 
 
-            else:
-                self.throw_receiver.update_throw_receiver(False) # Cancel the current receiver's status
-                
-                receiver_id = self.throw_receiver.get_id() + 1
+            self.throw_receiver = self.gp_helpers.change_throw_receiver(self.fielder_objects, self.throw_receiver)
 
-                if receiver_id > 9:
-                    receiver_id = 1
-
-                self.new_throw_receiver(receiver_id)
-
-
-        def new_throw_receiver(self, receiver_id):
-            self.throw_receiver = self.fielder_objects[receiver_id]
-            self.throw_receiver.update_throw_receiver(True)
-            
             theta = self.gp_helpers.get_throw_theta(self.curr_fielder_with_ball, self.throw_receiver)
+
             self.send_throw_data_to_ball(theta)
-            
+
 
     #### Man Functions
     for update_fielders_and_baserunners in range(1):
@@ -292,29 +226,9 @@ class GamePlay:
             self.curr_fielder_with_ball.update_ball_possession(True, True) # possession = True, exchange = True
             
             ## Throw related
-            self.throw_toggle = False
-
             if self.throw_receiver:
                 self.throw_receiver.update_throw_receiver(False) ## NON FUNCTIONAL / CHANGE COLOUR
                 self.throw_receiver = None
-
-
-        ### Move and draw 'men' ### 
-        
-        def move_and_draw_fielders(self):
-            
-            for fielder in self.fielder_objects.values():
-                fielder.goal_move() 
-                
-                if not fielder.get_goal():
-                    fielder.move_man(self.keyboard_arrow_input) ## This overrides the goal-setting animation unless only called when no goal 
-                
-                fielder.draw_man()
-   
-   
-        def move_and_draw_baserunners(self): 
-            self.baserunners.move_baserunner() 
-            self.baserunners.draw_man()
 
 
     for pass_throughs in range(1):
@@ -352,7 +266,6 @@ class GamePlay:
                     if not self.throw_receiver:
                         self.change_throw_receiver()
 
-                    self.throw_toggle = True
                     self.curr_fielder_with_ball.update_ball_possession(False, False)
                     self.curr_fielder_with_ball = None ## Prev_fielder_with_ball remains 
                     self.ball.thrown_launch()
@@ -367,15 +280,16 @@ class GamePlay:
             ## Called from Main > Get Events 
             def drop_ball(self):
                 if self.curr_fielder_with_ball:
+                    self.prev_fielder_with_ball = self.curr_fielder_with_ball
                     self.curr_fielder_with_ball = None
-                    self.prev_fielder_with_ball = None
                     self.ball.fielder_drop_the_ball()
 
 
             ## Called from main -- hit L to reset the situation
             def reset_play(self):
+                self.drop_ball() ## Ensure ball is fully detached 
                 self.fielder_objects = self.gp_helpers.make_fielders(Fielder) # 1-9  
-                self.ball.reset_play()
+                self.ball.reset_play() ## Move ball to Home coord and height = 3'
                 #self.baserunners = self.make_baserunners() # THIS WOULD PRODUCE AN ERROR IF IT WAS CALLED
 
 
