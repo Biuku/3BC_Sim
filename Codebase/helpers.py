@@ -88,12 +88,12 @@ class Helpers:
 
 
     ## Not sure I still use these
-
+    """
     def get_total_time_seconds(self, start_time_ms): 
         current_time = pygame.time.get_ticks()
         total_time_seconds = (current_time - start_time_ms) / 1000
         
         return total_time_seconds
-
+    """
 
 # Last line

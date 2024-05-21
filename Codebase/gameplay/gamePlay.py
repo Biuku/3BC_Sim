@@ -131,7 +131,8 @@ class GamePlay:
 
     #### Ball Functions: Ball movement | Ball launch and drop ball
     for update_ball in range(1):
-        
+
+
         ## Throws -- called whenever the throw receiver changes
         def send_throw_data_to_ball(self, direction_deg):
             

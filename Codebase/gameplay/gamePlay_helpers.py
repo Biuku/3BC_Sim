@@ -29,8 +29,9 @@ class GameplayHelpers:
         def make_fielders(self, Fielder_object):
 
             fielder_objects = {}
+            num_fielders = 1
 
-            for fielder_id in [x for x in range(1, 10)]:
+            for fielder_id in [x for x in range(1, num_fielders + 1)]:
                 coord = self.setup.fielder_standard_coord[fielder_id]                
                 fielder_objects[fielder_id] = Fielder_object(self.screen, coord, fielder_id)
 
@@ -176,4 +177,5 @@ class GameplayHelpers:
         theta_rad = self.helpers.coord_to_theta(start_coord, end_coord)
 
         return math.degrees(theta_rad)
+
 # Last time

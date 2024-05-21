@@ -77,8 +77,7 @@ class Ball:
             self.curr_velo_mph = 0 
             self.prev_coord_3D = self.coord_3D_pg  ## For measuring distance travelled per frame
             self.prev_coord_3D_2 = self.coord_3D_pg 
-            self.prev_ticks = 0
-            self.tick_duration = 0.1 # Avoid division by zero initially
+
 
             # Distance 
             self.curr_distance_from_home_feet = 0
@@ -193,9 +192,9 @@ class Ball:
     for ball_movement_support in range(1):
 
         def update_xy_vectors(self):
-                ## Vectorize self.velocity_xy_pg for x and y vectors
-                self.velocity_x_pg = self.velocity_xy_pg * math.cos(self.launch_direction_rad)
-                self.velocity_y_pg = self.velocity_xy_pg * math.sin(self.launch_direction_rad)
+            ## Vectorize self.velocity_xy_pg for x and y vectors
+            self.velocity_x_pg = self.velocity_xy_pg * math.cos(self.launch_direction_rad)
+            self.velocity_y_pg = self.velocity_xy_pg * math.sin(self.launch_direction_rad)
 
 
         def update_metrics_for_movement(self):

@@ -27,6 +27,8 @@ class ScreenPrinter:
         self.font12 = pygame.font.SysFont('Arial', 12) 
         self.font15 = pygame.font.SysFont('Arial', 15)
         self.font20 = pygame.font.SysFont('Arial', 18)
+        
+        
 
 
     def write_text_onScreen(self, general, ball_metrics, ball_inputs):
@@ -36,6 +38,8 @@ class ScreenPrinter:
         self.new_frame() ## Reset y for start row of printing on screen
 
         ### STATIC INSTRUCTIONS
+        
+        """
         self.print_simple( [ "INSTRUCTIONS", "", "" ] )
         self.print_simple( [ "Show boundary markers: b", "", "" ] )
         self.print_simple( [ "Show defensive coords: n", "", "" ] )
@@ -47,8 +51,6 @@ class ScreenPrinter:
         self.print_simple( [ "Throw ball: h", "", "" ] )
         self.print_simple( [ "Change throw target: j", "", "" ] )
 
-
-        
         self.draw_minor_separation_line ()
          
         self.print_simple( ["Select a Defensive Situation:", "", "" ] )
@@ -66,10 +68,14 @@ class ScreenPrinter:
         self.print_rounded( [ "Launch direction (z-x): ", ball_inputs["launch_direction"], "°"], 1)
         self.draw_minor_separation_line ()
 
+        """
         ## Baseball status  
         self.print_simple( ["BASES:", "", ""] )
         self.print_simple( ["Base attained:", general['base_attained'], ""] )
+        
         self.draw_minor_separation_line ()
+        
+        """
         
         ## Throwing  
         self.print_simple( ["THROWING:", "", ""] )
@@ -93,6 +99,7 @@ class ScreenPrinter:
         self.print_simple( ["Ball rolling: ", ball_metrics["rolling_toggle"], " "] )
         self.print_simple( ["# bounces: ", ball_metrics["num_bounces"], " "] )
         
+        """
 
 
 

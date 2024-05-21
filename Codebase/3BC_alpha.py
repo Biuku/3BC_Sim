@@ -78,7 +78,7 @@ for background in range(1):
 
         centroid = setup.boundaries['main_centroid'] ## The centre of a circle that includes the OF wall arc. This point is off-screen, South
         
-        radius = helpers.main_centroid_radius #helpers.measure_distance_in_pixels(centroid,  setup.boundaries['cf_wall'])
+        radius = helpers.main_centroid_radius ## Has to be stored in helpers to avoid import conflict 
         
         ### 1. First, I need to hide a bunch of things from the png that are screwy because it is not symmetrical ####
         ## Draw white ring -- I need to cover up part of the black OF wall beyond the new wall 
@@ -422,7 +422,6 @@ while not exit:
     
     ## Baseball situation execition 
     gamePlay.master_gameplay_control()
-
 
     pygame.display.update() 
 
