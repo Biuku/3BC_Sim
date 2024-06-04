@@ -53,6 +53,7 @@ class CreateRunner:
         
         return batter
         
+        
     def create_runner(self, name, base):
         runner = Baserunner(name, base)
         print(f"Created {name} on {base}B")
@@ -63,9 +64,7 @@ class CreateRunner:
 
 class Occupy:
     
-    def occupy_attain_base(self, li, runners):
-        name = li[1]
-        base = li[2]
+    def occupy_attain_base(self, name, base, runners):
         runner = runners[name]
 
         print(f"\n{name} is attempting to occupy {base}B")
@@ -96,24 +95,5 @@ class Occupy:
 
         return runners
 
-
-
-class Utilities:
-    
-    def print_status(runners):
-        print("\nStatus of runners:")
-
-        for name, runner in runners.items():
-            print(f" > {name} on {runner.attained_base} occupies {runner.occupied_base}", end = " | ")
-            print(f"He is forced to: {runner.f2_base}. He must tag-up at: {runner.tagup_base}")
-            
-    def print_options():
-        print("HOW TO MAKE RuEg GO.\nCall ru.master_do() and pass a list:")
-        print(f"  > Tag runner: ['tag r', name = str]")
-        print(f"  > Tag base: ['tag b', base = int]")
-        print(f"  > Runner occupy a base: ['occupy', name = str, base = int]")
-        print(f"  > Change state: ['state', 'zero', fbc' or 'bip' = str]")
-        print(f"  > Create runner: ['create', start_base = int]\n")
-        print("*******************\n")
 
 ## Last line

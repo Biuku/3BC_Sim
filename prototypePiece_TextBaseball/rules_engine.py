@@ -34,7 +34,6 @@ class Game:
     def __init__(self):
 
         """ Jupyter stuff """
-        
         self.af = ApplyForces()
         self.rf = RemoveForces()
         self.cr = CreateRunner()
@@ -48,6 +47,8 @@ class Game:
         self.runners = {} # {name: object}
         self.batter = None
         
+        self.runners_out = []
+        
         """ Previous stuff I still need """            
 
         self.screen_printer = ScreenPrinter(screen, self.name_map)
@@ -56,61 +57,152 @@ class Game:
         self.input_primary = None
         self.input_runner = None
         self.input_base = None
+        self.input_state = None
+        self.batter = None
+        
+        self.UI_submit_flag = False
 
 
     #### Functions ####
-    
 
     for control_baseball_actions in range(1): 
         
         def master_do_stuff(self):
+            
+            if self.UI_submit_flag and self.input_primary:
+                func_map = {'r': self.fielder_tags_runner, 'b': self.fielder_tags_base, 'o': self.occupy_attain_base, 
+                        's': self.change_state, 'c': self.create_runner}
+                
+                key = self.input_primary
+                func_map[key]()  # Call the function associated with the key
+                
+                self.UI_submit_flag = False
+                self.reset_user_input()
+
             self.screen_print()
 
 
-    for execute_baseball_actions in range(1): 
-        pass
-                
+        def change_state(self):
+            if type(self.input_state) == str:
+                return 
 
-    for update_force_sitations in range(1):
-        pass
+            self.state = self.input_state
+            
+            if self.state == 0:
+                print("State updated to 0: Pre-pitch")
+                self.state = 0
+                
+            elif self.state <= 2:
+                
+                self.state_12()
+                    
+                if self.state == 1: # 1 = BIP
+                    print("State updated to 1: BIP")
+                    self.runners = self.af.apply_forces(self.batter, self.runners)
+
+                elif self.state == 2: # 2 = FBC
+                    self.state_fbc()
+                    
+            
+        def state_12(self):
+            
+            ## All BR de-occupy their base
+            for name, runner in self.runners.items():
+                runner.occupied_base = None
+
+            ## Instantiate a batter at base 0
+            name = self.names.pop(0)
+            self.batter = self.cr.create_batter(name)
+            self.runners[name] = self.batter
+
+            
+        def state_fbc(self):
+            print("Sub-state updated to: FBC", end = " | ")
+
+            self.put_out(self.batter)
+            
+            for runner in self.runners.values():
+                runner.tagup_base = runner.attained_base
+
+
+        def create_runner(self):
+            name = self.names.pop(0)
+            base = self.input_base
+            
+            runner = self.cr.create_runner(name, base)
+            self.runners[name] = runner 
+            
+
+    for execute_baseball_actions in range(1): 
+    
+               
+        def fielder_tags_runner(self):
+            name = self.input_runner
+            runner = self.runners[name]
+
+            out_tracer = False
+
+            if not(runner.occupied_base):
+                self.put_out(runner)
+                out_tracer = True
+
+            print(f"\nFielder tagged {name} for Out = {out_tracer}")
+                
+               
+        def fielder_tags_base(self):
+            tagged_base = self.input_base
+        
+            for runner in self.runners.values():
+                if runner.f2_base == tagged_base or runner.tagup_base == tagged_base:
+                    self.put_out(runner)
+                    print(f"Fielder tagged {tagged_base} to put {runner.name} out.")
+                    
+                    return
+
+
+        def occupy_attain_base(self):
+            
+           if self.runners:
+               self.runners = self.oc.occupy_attain_base(self.input_runner, self.input_base, self.runners)
+
+
+        def put_out(self, runner_out):
+            """ Pass the runner object being put out """
+                    
+            self.runners = self.rf.remove_forces(runner_out, self.runners) # Remove forces for preceding BR        
+            del self.runners[runner_out.name] # Delete runner from list of runners
+            self.names.append(runner_out.name) # Recycle the name
+            self.runners_out.append(runner_out)
+
+            print(f"{runner_out.name} is Out.\n")
 
 
     for user_input in range(1):
 
-        
         def update_primary_user_input(self, var):
             self.input_primary = var
-                    
+
 
         def update_secondary_user_input(self, var):
             
-            if type(var) == str:
-                self.update_runners_user_input(var)
+            ## Directly update the state 
+            if self.input_primary == 's':
+                self.input_state = var
+                 
+            elif type(var) == int: 
+                self.input_base = var
                 
-            if type(var) == int:
-                
-                ## Directly update the state 
-                if self.input_primary == 's':
-                    self.update_state(var)
-                    
-                else: 
-                    self.input_base = var 
-                    
+            elif type(var) == str:
+                self.input_runner = self.name_map[var]
 
-        def update_state(self, new_state):
-            self.state = new_state
+
+        def reset_user_input(self):
+            self.input_primary = None
+            self.input_runner = None
+            self.input_base = None
+            self.input_state = None
             
-                
-
-        def update_runners_user_input(self, runner_key):
-            self.input_runner = self.name_map[runner_key]
-
-
-
-    for functional_gets in range(1):
-        pass
-
-   
+            
     for screen_print in range(1):
 
         def screen_print(self): 
@@ -124,40 +216,50 @@ class Game:
                 
             runner = self.input_runner
             base = self.input_base
-            
             state = self.state
-     
-            #base_occupants = self.get_base_occupants_text()
-            base_occupants = None
-            #runners_out = self.get_runners_out()
-            
-            self.screen_printer.left_side(primary, runner, base)
-            self.screen_printer.right_side(state, base_occupants)
-
+            runners_out = self.runners_out
+            base_occupants = self.get_base_occupants_text()
+            runner_status = self.get_runner_status_text()
     
-        """    
+
+            self.screen_printer.left_side(primary, runner, base)
+            self.screen_printer.right_side(state, base_occupants, runner_status, runners_out)
+
+
         def get_base_occupants_text(self):
-            #Used to print 'who's on first'.
-            #Returns a Dict of only the occupied bases as keys and runner names as values
 
-            base_runnerObject_dict, _ = self.get_occupied_bases()
-            new_dict = {}
-            
-            for base, status in base_runnerObject_dict.items():
-                if status:
-                    new_dict[base] = base_runnerObject_dict[base].name
+            bases = {0: None, 1: None, 2: None, 3: None}
 
-            return new_dict
-             
-        def get_runners_out(self):
+            for name, runner in self.runners.items():
+                base = runner.attained_base
+                bases[base] = name 
+                
+            return bases
+        
+        
+        def get_runner_status_text(self):
             
-            runners_out = []
+            temp_runners = {}
             
-            for runner in self.runners:
-                if runner.out_status:
-                    runners_out.append(runner.name)
-        """
-                    
+            ## Build a dictionary of attributes (as str's) for each runner
+            for name, runner in self.runners.items():
+                sub_dict = {}
+                
+                sub_dict["Attained"] = runner.attained_base
+                sub_dict["Occupied"] = runner.occupied_base
+                sub_dict["Forced-to"] = runner.f2_base
+                sub_dict["Tag-up"] = runner.tagup_base
+                
+                ## If the base is not None, add "B", else, make it "-"
+                for key, value in sub_dict.items():
+                    if value:
+                        sub_dict[key] = str(value) + "B" 
+                    else:
+                        sub_dict[key] = "-"
+                        
+                temp_runners[name] = sub_dict
+
+            return temp_runners
 
 
 """ ************************** MAIN ************************** """
@@ -171,32 +273,8 @@ for user_input_validation in range(1):
     for i in range(1, 27):
         pg_alpha_key_dict[i + 96] = alphabet_li[ i - 1]
 
-
 game = Game()
-
-#dudes = {'Isaac': 2, 'Jack': 1} # , 'Josh': 0
-#game.make_baserunners(dudes)
-
-
 exit = False
-
-primary_user_input = None
-
-""" 
-None = get primary user input >
-'s' = change state > 
-    0, 1, 2 = state
-'r' = tag runner > 
-    str
-'b' = tag base > 
-    int
-'o' = occupy base > 
-    int
-    str
-'c' = create runner >
-    int
-'x' = reset user input > 
-"""
 
 while not exit:
     
@@ -211,43 +289,37 @@ while not exit:
 
             if event.key == K_ESCAPE:
                 exit = True
-            
-            ## Primary input
-            if event.key == K_x:
-                game.update_primary_user_input(None)
-                game.input_runner = None
-                game.input_base = None
 
-                
+            if event.key == K_x:
+                game.reset_user_input()
+
+            ## Primary input
             if not(game.input_primary):
+                
                 if event.key in [K_s, K_r, K_b, K_o, K_c]:
                     primary_key = pg_alpha_key_dict[event.key]
                     game.update_primary_user_input(primary_key)
-
+                    print(f"Primary key: {primary_key}")
 
             ## Secondary input
             else:
-                ## Base # keys and state keys
+                ## Base and state keys -- int
                 if event.key in [K_0, K_1, K_2, K_3, K_4]:
                     int_key = event.key - 48
                     game.update_secondary_user_input(int_key)
+                    print(f"secondary key: {int_key}")
                 
-                ## Baserunner keys
+                ## Baserunner keys -- str
                 if event.key in [K_i, K_j, K_d, K_r, K_c, K_s, K_p, K_b, K_k, K_f, K_l]:
-                    runner_key = pg_alpha_key_dict[event.key]
-                    game.update_secondary_user_input(runner_key)
-            
-            ## Overall
-            """
+                    chr_key = pg_alpha_key_dict[event.key]
+                    game.update_secondary_user_input(chr_key)
+                    print(f"secondary key: {chr_key}")
+
+            ## Submit UI flag
             if event.key == K_SPACE:
-                game.update_startStop_user_inputs('space')
-            
-            if event.key == K_RETURN:
-                game.update_startStop_user_inputs('return')
-            """
+                game.UI_submit_flag = True
 
     game.master_do_stuff()
     pygame.display.update() 
-
 
 # Last line

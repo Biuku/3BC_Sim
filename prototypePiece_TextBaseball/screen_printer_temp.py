@@ -42,176 +42,242 @@ class ScreenPrinter:
         def left_side(self, primary, runner, base):
 
             ### PREP
-            if base:
+            if base != None:
                 base = str(base)+"B"
             
             self.draw_major_vertical_demarcation_line(1000)
             self.new_frame() ## Reset y for start row of printing on screen
 
-        ### STATIC INSTRUCTIONS
-            
-            self.print_heading( "INSTRUCTIONS" )
-            self.paragraph_break()
-            self.print_subheading( [ "Primary UI options:" ] )
-            self.x += self.tab 
-            
-            tab = 150
-            colour = 'black'
-            primary_map = {'s': 'Change state:', 'r': "Tag runner:", 'b': 'Tag base:', 'o': 'Occupy base:', 
-                   'c': 'Create baserunner:', 'x': "Reset user input:"
-                   }
-            
-            for key, value, in primary_map.items():
-                self.print_tabbed_same_line( [ value, key], tab, None, colour)
-            
-            self.x -= self.tab 
+            ## DO LEFT SIDE
+            self.print_LS_static_instructions()
+            self.section_break()                            
 
-                        
-            #### Display user input
+            self.print_primary_UI(primary)
             self.section_break()
-            self.print_heading( "USER INPUT" )
-            
-            ### Display primary input
-            self.x -= self.tab ## Adjust for normal tab on displaying UI
-            self.print_user_input_tabbed( ["Primary user input:", primary], 150)
-            self.x += self.tab 
 
-            self.paragraph_break()  
-            
             if primary == 'State':
-                self.print_subheading( [ "Change state"] ) ### !!! MAKE THIS A SUBEADING !!!
-                
-                tab = 80
-                state_map = {"Pre-pitch": "0", "BIP": "1", "FBC": "2"}
-                
-                self.x += self.tab
-                
-                for key, value in state_map.items():
-                    self.print_tabbed_same_line( [ key, value], tab, None, colour)
-
-                self.x -= self.tab
+                self.print_UI_state()
 
             elif primary == 'Tag runner':
-                self.print_subheading( [ "Tag runner"] )            
-                self.print_baserunner_names()
-                self.print_secondary_input_subhead()
-                
-                self.print_user_input_tabbed( ["Runner to tag:", runner], 110 )
-                                             
-            
-            elif primary == 'Tag base':
-                self.print_subheading( [ "Tag base"] )
+                self.print_UI_tagRunner(runner)
 
-                self.print_str_tabbed( "Select start base: 1, 2, 3, 4")                                
-                
-                self.print_secondary_input_subhead()
-                
-                self.print_user_input_tabbed( ["Base:", base], 50 )
-            
+            elif primary == 'Tag base':
+                self.print_UI_tagBase(base)
 
             elif primary == 'Occupy base':
-                self.print_subheading( [ "Occupy base" ] )                
-
-                self.print_str_tabbed( "Select start base: 1, 2, 3, 4")                                
-                self.print_baserunner_names()
-
-                self.print_secondary_input_subhead()
-                
-                self.print_user_input_tabbed( ["Base:", base], 70 )
-                self.print_user_input_tabbed( ["Runner:", runner], 70 )
-                
+                self.print_UI_occupyBase(base, runner)
 
             elif primary == 'Create baserunner':
-                self.print_subheading( [ "Create runner", "", "" ] )
-                self.print_str_tabbed( "Select start base: 1, 2, 3, 4")
-
-                self.print_secondary_input_subhead()
-                
-                self.print_user_input_tabbed( ["Base: ", base], 50)
+                self.print_UI_createBaserunner(base)
 
 
+        def print_LS_static_instructions(self):
+            tab = self.tab
+            inLine_tab = 150
+            
+            primary_map = {'s': 'Change state:', 'r': "Tag runner:", 'b': 'Tag base:', 'o': 'Occupy base:', 
+                   'c': 'Create baserunner:', 'x': 'Reset user input:'}
 
-            ## Display secondary user input
-            self.y = 1350 - 500
+            self.print_heading_str( "INSTRUCTIONS" )
+            self.paragraph_break()
+            self.print_subheading_str( "Primary UI options:" )
+
+            for key, value, in primary_map.items():
+                self.print_two_same_line_li( [ value, key], tab, inLine_tab, 'black')
+
+
+        def print_primary_UI(self, primary):
+            tab = self.tab
+            inLine_tab = 150
+
+            self.print_heading_str( "USER INPUT" )
+
+            self.print_two_same_line_li( ["Primary user input:", primary], tab, inLine_tab, 'blue')   
+
+
+        def print_UI_state(self):
+            tab = self.tab
+            inLine_tab = 80
+            state_map = {"Pre-pitch": "0", "BIP": "1", "FBC": "2"}
+            
+            self.print_subheading_str( "Change state" )
+
+            for key, value in state_map.items():
+                self.print_two_same_line_li( [ key, value], tab, inLine_tab, 'black')
+
+
+        def print_UI_tagRunner(self, runner):
+            tab = self.tab
+            inLine_tab = 110
+            
+            self.print_subheading_str( "Tag runner" )            
+            self.print_baserunner_names()
+            self.print_secondary_input_subhead()
+            self.print_two_same_line_li( ["Runner to tag:", runner], tab, inLine_tab, 'blue' )
+
+
+        def print_UI_tagBase(self, base):
+            tab = self.tab
+            inLine_tab = 50
+                        
+            self.print_subheading_str( "Tag base" )
+            self.print_str( "Select start base: 1, 2, 3, 4", tab, 'black')                                
+            self.print_secondary_input_subhead()
+            self.print_two_same_line_li( ["Base:", base], tab, inLine_tab, 'blue' )
+        
+        
+        def print_UI_occupyBase(self, base, runner):
+            tab = self.tab
+            inLine_tab = 70
+            
+            self.print_subheading_str( "Occupy base" )                
+
+            self.print_str( "Select start base: 1, 2, 3, 4", self.tab, 'black')                                
+            self.print_baserunner_names()
+
+            self.print_secondary_input_subhead()
+            
+            self.print_two_same_line_li( ["Base:", base], tab, inLine_tab, 'blue' )
+            self.print_two_same_line_li( ["Runner:", runner], tab, inLine_tab, 'blue')
+        
+        
+        def print_UI_createBaserunner(self, base):
+            tab = self.tab
+            inLine_tab = 50
+            
+            self.print_subheading_str( "Create runner" )
+            self.print_str( "Select start base: 1, 2, 3, 4", self.tab, 'black')
+
+            self.print_secondary_input_subhead()
+            
+            self.print_two_same_line_li( ["Base: ", base], tab, inLine_tab, 'blue')
 
 
         def print_baserunner_names(self):
-            
-            self.x += self.tab
+            tab = self.tab
+            inLine_tab = 40
             
             self.paragraph_break()
-            self.print_simple( [ "Select runner using one of these keys:", "", "" ] )
+            self.print_str( "Select runner using one of these keys:", tab )
             
             for key, name in self.name_map.items():
                 name += ":"
-                tab_pixels = 105
-                self.print_tabbed_same_line( [name, key], tab_pixels, None, 'black')
-
-            self.x -= self.tab
+                inLine_tab = 105
+                self.print_two_same_line_li( [name, key], tab, inLine_tab, 'black')
 
             self.paragraph_break()  
-        
+
 
         def print_secondary_input_subhead(self):
             self.paragraph_break()  
-            self.print_subheading(["Secondary user input", "", ""])
+            self.print_subheading_str("Secondary user input")
+
+
+    for right_side in range(1): 
+        """ RIGHT SIDE OF THE SCREEN """
+
+        def right_side(self, sit_state, base_occupants, runner_status, runners_out):
+            self.x = 1200
+            self.y = self.y_constant
+            
+            self.print_state(sit_state)
+            self.section_break()
+
+            self.print_base_occupants(base_occupants)
             self.paragraph_break()  
-
-
-
-        
-    """ RIGHT SIDE OF THE SCREEN """
-    def right_side(self, sit_state, base_occupants, ):
-        self.x = 1200
-        self.y = self.y_constant
-        
-        for ball_in_play in range(1):
-         
-            self.print_heading( "STATUS:" )
-            self.print_simple(["", sit_state, ""])
+            
+            self.print_status_runners(runner_status)
             
             self.section_break()
+            
+            self.print_runners_out(runners_out)
+ 
+
+        def print_state(self, state_int):
+            tab = self.tab
+            inLine_tab = 50
+            
+            map = {0: "Pre-pitch", 1: "Ball in play", 2: "Fly ball caught"}
+            state_str = None
+
+            if state_int < 0:
+                state_str = "PRE-GAME"
+            
+            elif state_int < 3: 
+                state_str = map[state_int]
+
+            self.print_heading_str( "GAME STATUS" )
+            self.paragraph_break()
+            self.print_subheading_str( "State" )
+            self.print_two_same_line_li( [ "State: ", state_str], tab, inLine_tab, 'blue')
+
         
+        def print_base_occupants(self, base_occupants):
+            tab = self.tab
+            inLine_tab = 75
+            
+            self.print_subheading_str( "Base occupants" )
+            
+            for base, occupant_name in base_occupants.items():
+                
+                if base == 0:
+                    base_str = "Batter"
+                else:
+                    base_str = str(base) + "B"
+                
+                if occupant_name == None:
+                    occupant_name = "-"
+                    
+                li = [base_str, occupant_name]
+                self.print_two_same_line_li( li, tab, inLine_tab, 'Blue')
+                
+
+        def print_status_runners(self, runner_status):
+            tab = self.tab
+            inLine_tab = 100
+            
+            self.print_subheading_str( "Runners" )
+            
+            self.x += self.tab
+            
+            ## If the dict is empty
+            if not runner_status:
+                self.print_str("No runners")
+            
+            for name, sub_dict in runner_status.items():
+                self.print_str(name, 0, 'blue')
+                
+                for key, value in sub_dict.items():
+                    li = [key, value]
+                    self.print_two_same_line_li(li, tab, inLine_tab, 'blue')
+                
+                self.paragraph_break()
+
+            self.x -= self.tab
+            
+            
+        def print_runners_out(self, runners_out):
+            tab = self.tab
+            
+            self.print_subheading_str( "Runners out" )
+            
+            if not(runners_out):
+                self.print_str("No runners", tab)
+                return
+            
+            for runner in runners_out:
+                self.print_str(runner.name, tab, 'blue')
+
+    
         """
         for runner_attainments in range(1):
-            
-            base_occupants = [1] ## Temp to prevent breakage
-            
-            self.print_heading( "OCCUPIED BASES" )
-            
-            for base in range(1, 4):
-                str_ = str(base) + "B: "
-                
-                if base in base_occupants:
-                    runner = base_occupants[base]
-                    str_ += runner
-                
-                self.print_str_tabbed( [ "", str_, "" ] ) 
-            
-            self.paragraph_break() 
-        """
-            
-            
-        """ IGNORE RUNS AND OUTS FOR NOW
-            self.print_simple( ["RUNNERS WHO SCORED, RUNNERS WHO ARE OUT", "", ""] )
-            self.print_simple( ["Runners who scored:", "", ""])
-            for runner in scored:
-                self.print_str_tabbed( [ "", runner.name, "" ] ) 
-                
-            self.print_simple( ["Runners who are out:", "", ""])
-            if runners_out:
-                
-                for runner in runners_out:
-                    self.print_str_tabbed( [ "", runner, "" ] ) 
-            """
 
 
-        """
         self.section_break() 
 
         for runner_forces_tagups in range(1):
 
-            self.print_heading( "RUNNER FORCES AND TAGUPS" )
+            self.print_heading_str( "RUNNER FORCES AND TAGUPS" )
             
             for runner, rights_dict in runner_rights.items():
                 string_ = runner + " is entitled to " + rights_dict['Rights'] + " and is "
@@ -222,95 +288,67 @@ class ScreenPrinter:
                 else:
                     string_ += "not under force"
                     
-                self.print_simple( [ "", string_, "" ] )
+                self.print_simple_li( [ "", string_, "" ] )
                 
             self.section_break() 
         """
 
-    ## Pass text as a list: [start text, variable, end text]     
     for types_of_printing in range(1):
         
         def print_foundation_str(self, text, font, colour):
+            
+            #print(f"TRACER IN PRINT FOUNDATION | text: {text}")
+            
             text = font.render(text, True, colour)
             text_rect = text.get_rect()
             text_rect.topleft = (self.x, self.y)
         
             self.screen.blit(text, text_rect)
-
+            
                 
-        def print_heading(self, text):
+        def print_heading_str(self, text):
             font = pygame.font.SysFont('Arial_bold', 35)
-            colour = 'black'
-            self.print_foundation_str(text, font, colour)
+            self.print_foundation_str(text, font, 'black')
             self.y += 2 * self.y_pg_break
 
             
-        def print_subheading(self, text):
+        def print_subheading_str(self, text):
             font = pygame.font.SysFont('Arial_bold', 25)
-            colour = 'black'
-            
-            text = text[0]
-            
-            self.print_foundation_str(text, font, colour)
+            self.print_foundation_str(text, font, 'black')
             self.y += self.y_pg_break
 
 
-        def print_simple(self, text, font = None, colour = 'black'):
-            if not(font):
-                font = self.font17
+        def print_simple_li(self, text, tab = 0, colour = 'black'):
+            self.x += tab
 
             text = text[0] + " " + str(text[1]) + text[2]
-            self.print_foundation_str(text, font, colour)
-            self.y += self.y_pg_break
-            
-
-        def print_str_tabbed(self, text_str, font = None, colour = 'black'):
-            if not(font):
-                font = self.font17
-
-            self.x += self.tab 
-            self.print_foundation_str(text_str, font, colour)
-            self.x -= self.tab
-            self.y += self.y_pg_break
-
-
-        def print_tabbed_same_line(self, text, tab_pixels, font, colour = 'black'):
-            if not(font):
-                font = self.font17
-            
-            self.print_str_same_line( text[0], font, colour)
-
-            self.x += tab_pixels
-            self.print_foundation_str( text[1], font, colour )
-            self.x -= tab_pixels
+            self.print_foundation_str(text, self.font17, colour)
+            self.x -= tab
             
             self.y += self.y_pg_break
-            
-                    
-        def print_str_same_line(self, text_str, font = None, colour = 'black'):
-            if not(font):
-                font = self.font17
 
-            self.print_foundation_str(text_str, font, colour)
-        
-
-        def print_user_input_tabbed(self, text, tab = 100):
-            self.x += self.tab 
-
-            font = self.font17
             
-            self.print_str_same_line(text[0], font, 'black')
-            
-            self.x += tab 
-            self.print_foundation_str(text[1], font, 'blue')
+        def print_str(self, text, tab = 0, colour = 'black'):
+            self.x += tab            
+            self.print_foundation_str(text, self.font17, colour)
             self.x -= tab
 
-            self.x -= self.tab 
-
             self.y += self.y_pg_break
             
 
+        def print_two_same_line_li(self, text, tab = 0, inLine_tab = 0, second_colour = 'black'):
+            self.x += tab
 
+            self.print_foundation_str(text[0], self.font17, 'black')
+
+            ## The in-line tab
+            self.x += inLine_tab
+            self.print_foundation_str( text[1], self.font17, second_colour )
+            self.x -= inLine_tab
+            
+            self.x -= tab
+            self.y += self.y_pg_break
+            
 
     for breaks in range(1):
 
@@ -329,41 +367,19 @@ class ScreenPrinter:
             self.y = self.y_constant
             self.x = self.x_constant
 
-        def print_instruction_iterable(self, instruction_text, x, y):
-            for text in instruction_text:
-                self.draw_text(text, 'black', (x, y), self.font20, 1)
-                y += 20
-
-
-        ## Used to print a few characters next to an object for code-build. E.g., man_foundation > fielder position #; main > measuring tape data.
-        def draw_text(self, string_, colour, coord, font, justification):
-            text = font.render(string_, True, colour)
-            text_rect = text.get_rect()
-        
-            text_rect.topleft = coord
-        
-            if justification == 2: 
-                text_rect.center = coord
-                
-            self.screen.blit(text, text_rect)
-
 
         ## Draw a line between the playing field and the user input space
-        
         def draw_minor_separation_line(self):
-            
             self.y += 25
             x_end = self.x + 400
             thickness = 2
             
             pygame.draw.line(self.screen, 'grey', (self.x, self.y), (x_end, self.y), thickness)
-            
             self.y += 25
 
         
         def draw_major_vertical_demarcation_line(self, x):
             h = self.screen.get_height()
-            
             pygame.draw.line(self.screen, 'grey', (x, 0), (x, h), 5)
 
 
