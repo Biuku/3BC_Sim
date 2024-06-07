@@ -296,9 +296,6 @@ class ScreenPrinter:
     for types_of_printing in range(1):
         
         def print_foundation_str(self, text, font, colour):
-            
-            #print(f"TRACER IN PRINT FOUNDATION | text: {text}")
-            
             text = font.render(text, True, colour)
             text_rect = text.get_rect()
             text_rect.topleft = (self.x, self.y)

@@ -7,7 +7,7 @@ import math
 
 from helpers import Helpers
 from setup import Setup
-from screen_printer import ScreenPrinter
+from _screen_printer.screen_printer import ScreenPrinter
 
 
 class Man: 

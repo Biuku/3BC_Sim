@@ -9,18 +9,14 @@ from _ball.ball2 import Ball
 from _runningMen.fielders import Fielder
 from _runningMen.baserunners import Baserunner
 
-
 from gameplay.gamePlay_helpers import GameplayHelpers
 from gameplay.interpret_situation import InterpretSituation
 
-
 from setup import Setup
 from helpers import Helpers
-from screen_printer import ScreenPrinter
-
+from _screen_printer.screen_printer import ScreenPrinter
 
 pygame.init()
-
 
 class GamePlay:
     
@@ -336,7 +332,9 @@ class GamePlay:
 
             ball_metrics_screen_text, ball_launch_data_text = self.ball.package_data_objects()
 
-            self.screenPrinter.write_text_onScreen(general_screen_text, ball_metrics_screen_text, ball_launch_data_text)
+
+            """ JUNE 6: I MAY NEED TO PACKAGE UP A BUNCH OF STUFF TO SEND TO PRINT SCREEN, OR SEND IT IN A FEW LINES OF CODE, THEN CALL THE VARIOUS PARTS """
+            self.screenPrinter.print_UI_to_screen(general_screen_text, ball_metrics_screen_text, ball_launch_data_text)
 
 
         def prep_screen_data(self):
@@ -345,7 +343,6 @@ class GamePlay:
                 self.current_defensiveSit_text = self.setup.defensive_plays[self.curr_defensive_play_ID][0]
 
             """ Each of these three could be pushed down a level """
-
             ## Get the ID of the player with the ball (if any)
             if self.curr_fielder_with_ball:
                 self.fielder_with_ball_text = self.curr_fielder_with_ball.get_id()

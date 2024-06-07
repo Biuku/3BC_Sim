@@ -32,7 +32,6 @@ class Fielder(Man):
         self.throw_receiver_toggle = False
 
 
-
     #### MAIN FUNCTIONS
 
     for goals in range(1):

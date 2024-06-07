@@ -9,7 +9,7 @@ import math
 from setup import Setup
 from gameplay.gamePlay import GamePlay
 from helpers import Helpers
-from screen_printer import ScreenPrinter
+from _screen_printer.screen_printer import ScreenPrinter
 
 import os
 os.environ['SDL_VIDEO_WINDOW_POS'] = "%d, %d" %(1, 30) # Opens Pygame to top-left of monitor
@@ -17,7 +17,7 @@ os.environ['SDL_VIDEO_WINDOW_POS'] = "%d, %d" %(1, 30) # Opens Pygame to top-lef
 ##### ***** INITIALIZE PYGAME ***** #####
 
 pygame.init()
-w = 2500 #3400 #= optimal for my widescreen
+w = 3400 #3400 #= optimal for my widescreen
 h = 1350
 screen = pygame.display.set_mode( (w, h) )
 

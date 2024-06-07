@@ -201,12 +201,11 @@ class Game:
             self.input_runner = None
             self.input_base = None
             self.input_state = None
-            
-            
+
+
     for screen_print in range(1):
 
         def screen_print(self): 
-            
             primary_map = {'s': 'State', 'r': "Tag runner", 'b': 'Tag base', 'o': 'Occupy base', 'c': 'Create baserunner'}
             
             ## Setup stuff
